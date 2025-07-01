@@ -249,9 +249,15 @@ export default function Home() {
           <CampoContador titulo="Sinucas" campoMandante="sinucas_mandante" campoVisitante="sinucas_visitante" />
 
           <div className="flex items-end gap-4">
-            <div className="flex-grow">
+            <div className="w-1/2">
               <label className="block mb-1 font-medium">Vencedor</label>
-              <select name="vencedor" value={form.vencedor} onChange={handleChange} className="w-full p-2 border rounded" required>
+              <select
+                name="vencedor"
+                value={form.vencedor}
+                onChange={handleChange}
+                className="w-full p-2 border rounded"
+                required
+              >
                 <option value="">Selecione o Vencedor</option>
                 {nomes.map((nome) => (
                   <option key={nome} value={nome}>{nome}</option>
@@ -259,13 +265,15 @@ export default function Home() {
               </select>
             </div>
 
-            <button
-              type="submit"
-              className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 whitespace-nowrap"
-              disabled={loading}
-            >
-              {loading ? "Salvando..." : "Salvar Resultado"}
-            </button>
+            <div className="w-1/2">
+              <button
+                type="submit"
+                className="w-full bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700"
+                disabled={loading}
+              >
+                {loading ? "Salvando..." : "Salvar Resultado"}
+              </button>
+            </div>
           </div>
 
           {message && <p className="mt-2 text-green-700 font-semibold">{message}</p>}
