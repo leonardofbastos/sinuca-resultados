@@ -59,13 +59,12 @@ export default function Home() {
   const handleChange = (e) => {
     const { name, value } = e.target;
 
-    // Limpar vencedor se mudar partida
     if (name === "id_partida") {
       setForm((prev) => ({
         ...prev,
         [name]: value,
         vencedor: "",
-        juiz: "", // limpa juiz também para evitar erro
+        juiz: ""
       }));
     } else {
       setForm((prev) => ({ ...prev, [name]: value }));
@@ -92,6 +91,14 @@ export default function Home() {
         .update({ status_partida: "LANÇADO" })
         .eq("id_partida", form.id_partida);
 
+      setPartidas((oldPartidas) =>
+        oldPartidas.map((p) =>
+          p.id_partida.toString() === form.id_partida.toString()
+            ? { ...p, status_partida: "LANÇADO" }
+            : p
+        )
+      );
+
       setMessage("Resultado salvo com sucesso!");
       setForm({
         id_partida: "",
@@ -107,7 +114,6 @@ export default function Home() {
         sinucas_visitante: 0
       });
       buscarResultados();
-      buscarPartidas();
     } else {
       setMessage("Erro ao salvar resultado.");
     }
@@ -115,21 +121,17 @@ export default function Home() {
     setLoading(false);
   };
 
-  // Filtra partidas conforme texto digitado no filtroPartida
   const partidasFiltradas = partidas.filter((p) => {
     const textoBusca = filtroPartida.toLowerCase();
     const label = `${p.id_partida} Rodada ${p.rodada} - ${p.clubes_mandante?.descricao} x ${p.clubes_visitante?.descricao}`.toLowerCase();
     return label.includes(textoBusca);
   });
 
-  // Pega partida selecionada para mostrar mandante e visitante nos labels
   const partidaSelecionada = partidas.find((p) => p.id_partida.toString() === form.id_partida);
 
-  // Nomes do mandante e visitante para os labels e para validar vencedor
   const nomeMandante = partidaSelecionada?.clubes_mandante?.descricao || "";
   const nomeVisitante = partidaSelecionada?.clubes_visitante?.descricao || "";
 
-  // Juízes válidos: somente nomes que não sejam os clubes envolvidos
   const juizesValidos = nomes.filter(
     (nome) => nome !== nomeMandante && nome !== nomeVisitante
   );
@@ -328,7 +330,6 @@ export default function Home() {
                 required
               >
                 <option value="">Selecione o Vencedor</option>
-                {/* Só pode escolher mandante ou visitante */}
                 {[nomeMandante, nomeVisitante].map((nome) => (
                   <option key={nome} value={nome}>
                     {nome}
