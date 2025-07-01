@@ -1,4 +1,3 @@
-// index.js
 import { useEffect, useState, useRef } from "react";
 import { createClient } from "@supabase/supabase-js";
 
@@ -61,14 +60,9 @@ export default function Home() {
       console.error("Erro ao buscar partidas:", error);
       setPartidas([]);
     } else {
+      console.log("Partidas carregadas:", data);
       setPartidas(data || []);
-      console.log("Dados partidas carregados:", data);
     }
-  };
-
-  const toggleMostrarTabela = () => {
-    if (!mostrarTabela) buscarPartidas();
-    setMostrarTabela(!mostrarTabela);
   };
 
   const handleSubmit = async (e) => {
@@ -91,7 +85,7 @@ export default function Home() {
       if (updateError) {
         setMessage("Erro ao atualizar status da partida.");
       } else {
-        setMessage("Resultado salvo!");
+        setMessage("Resultado salvo com sucesso!");
         setForm({
           id_partida: "",
           arbitro: "",
@@ -111,8 +105,13 @@ export default function Home() {
     } else {
       setMessage("Erro ao salvar resultado.");
     }
+
     setLoading(false);
   };
+
+  // Filtro das partidas para o dropdown
+  console.log("Partidas carregadas:", partidas);
+  console.log("Texto buscado:", searchTerm);
 
   const partidasFiltradas = partidas.filter(p => {
     if (!searchTerm.trim()) return true;
@@ -120,9 +119,7 @@ export default function Home() {
     return texto.includes(searchTerm.toLowerCase());
   });
 
-  console.log('partidas:', partidas);
-  console.log('searchTerm:', searchTerm);
-  console.log('partidasFiltradas:', partidasFiltradas);
+  console.log("Partidas filtradas:", partidasFiltradas);
 
   const partidaSelecionada = partidas.find(p => p.id_partida === form.id_partida);
 
@@ -149,7 +146,7 @@ export default function Home() {
         <div className="flex justify-between items-center mb-4">
           <h1 className="text-3xl font-bold">Lançar Resultado</h1>
           <button
-            onClick={toggleMostrarTabela}
+            onClick={() => setMostrarTabela(!mostrarTabela)}
             className="bg-gray-800 text-white px-4 py-2 rounded hover:bg-gray-700"
           >
             {mostrarTabela ? "Voltar" : "Ver Partidas"}
@@ -161,38 +158,24 @@ export default function Home() {
             <table className="w-full text-sm text-left">
               <thead className="bg-gray-200">
                 <tr>
-                  <th>Rodada</th>
-                  <th>ID</th>
-                  <th>Status</th>
-                  <th>Mandante</th>
-                  <th>Visitante</th>
-                  <th>Placar</th>
-                  <th>Felinos</th>
-                  <th>Penalidades</th>
-                  <th>Sinucas</th>
+                  <th>Rodada</th><th>ID</th><th>Status</th><th>Mandante</th><th>Visitante</th>
+                  <th>Placar</th><th>Felinos</th><th>Penalidades</th><th>Sinucas</th>
                 </tr>
               </thead>
               <tbody>
-                {partidas.length === 0 && (
-                  <tr>
-                    <td colSpan={9} className="text-center py-4 text-gray-500">
-                      Nenhuma partida encontrada.
-                    </td>
-                  </tr>
-                )}
                 {partidas.map(p => (
                   <tr key={p.id_partida} className="border-t">
                     <td>{p.rodada}</td>
                     <td>{p.id_partida}</td>
-                    <td className={`font-bold ${p.status_partida === "LANÇADO" ? "text-green-600" : "text-blue-600"}`}>
+                    <td className={`font-bold ${p.status_partida === 'LANÇADO' ? 'text-green-600' : 'text-blue-600'}`}>
                       {p.status_partida}
                     </td>
                     <td>{p.clubes_mandante?.descricao}</td>
                     <td>{p.clubes_visitante?.descricao}</td>
-                    <td>{p.resultado?.placar_mandante} x {p.resultado?.placar_visitante}</td>
-                    <td>{p.resultado?.felinos_mandante} x {p.resultado?.felinos_visitante}</td>
-                    <td>{p.resultado?.penalidades_mandante} x {p.resultado?.penalidades_visitante}</td>
-                    <td>{p.resultado?.sinucas_mandante} x {p.resultado?.sinucas_visitante}</td>
+                    <td>{p.resultado?.placar_mandante ?? 0} x {p.resultado?.placar_visitante ?? 0}</td>
+                    <td>{p.resultado?.felinos_mandante ?? 0} x {p.resultado?.felinos_visitante ?? 0}</td>
+                    <td>{p.resultado?.penalidades_mandante ?? 0} x {p.resultado?.penalidades_visitante ?? 0}</td>
+                    <td>{p.resultado?.sinucas_mandante ?? 0} x {p.resultado?.sinucas_visitante ?? 0}</td>
                   </tr>
                 ))}
               </tbody>
@@ -205,41 +188,31 @@ export default function Home() {
                 <label className="font-medium">Partida</label>
                 <input
                   value={searchTerm}
-                  onChange={e => {
-                    setSearchTerm(e.target.value);
-                    setDropdownOpen(true);
-                    setMessage("");
-                  }}
+                  onChange={e => { setSearchTerm(e.target.value); setDropdownOpen(true); }}
                   onFocus={() => setDropdownOpen(true)}
                   className="w-full p-2 border rounded"
                   placeholder="Rodada ou Clube..."
                   autoComplete="off"
                   required
                 />
-                {dropdownOpen && partidasFiltradas.length > 0 && (
+                {dropdownOpen && (
                   <ul className="absolute z-10 bg-white border w-full max-h-48 overflow-auto mt-1 rounded shadow">
-                    {partidasFiltradas.map(p => (
-                      <li
-                        key={p.id_partida}
-                        className="p-2 hover:bg-gray-200 cursor-pointer"
+                    {partidasFiltradas.length > 0 ? partidasFiltradas.map(p => (
+                      <li key={p.id_partida} className="p-2 hover:bg-gray-200 cursor-pointer"
                         onClick={() => {
                           setForm(f => ({ ...f, id_partida: p.id_partida }));
                           setSearchTerm(`Rodada ${p.rodada} - ${p.id_partida} - ${p.clubes_mandante?.descricao} x ${p.clubes_visitante?.descricao}`);
                           setDropdownOpen(false);
-                          setMessage("");
-                        }}
-                      >
+                        }}>
                         Rodada {p.rodada} - {p.id_partida} - {p.clubes_mandante?.descricao} x {p.clubes_visitante?.descricao} ({p.status_partida})
                       </li>
-                    ))}
+                    )) : (
+                      <li className="p-2 text-gray-500">Nenhuma partida encontrada</li>
+                    )}
                   </ul>
                 )}
-                {dropdownOpen && partidasFiltradas.length === 0 && (
-                  <div className="absolute z-10 bg-white border w-full p-2 mt-1 rounded shadow text-gray-500">
-                    Nenhuma partida encontrada.
-                  </div>
-                )}
               </div>
+
               <div className="w-1/2">
                 <label className="font-medium">Árbitro</label>
                 <select
@@ -266,8 +239,8 @@ export default function Home() {
                   {[0, 1].map(i => {
                     const campo = `${titulo.toLowerCase()}_${i === 0 ? "mandante" : "visitante"}`;
                     const nome = i === 0
-                      ? partidaSelecionada?.clubes_mandante?.descricao || "Mandante"
-                      : partidaSelecionada?.clubes_visitante?.descricao || "Visitante";
+                      ? `${partidaSelecionada?.clubes_mandante?.descricao || "Mandante"}`
+                      : `${partidaSelecionada?.clubes_visitante?.descricao || "Visitante"}`;
                     return (
                       <div key={campo} className="flex flex-col items-center">
                         <label className="text-blue-700 font-semibold mb-1">{nome}</label>
