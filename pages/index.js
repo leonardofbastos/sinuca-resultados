@@ -83,12 +83,14 @@ export default function Home() {
           penalidades_mandante,
           penalidades_visitante,
           sinucas_mandante,
-          sinucas_visitante
+          sinucas_visitante,
+          arbitro,
+          vencedor,
+          data_criacao
         )
       `)
-      .order("tab_partida.rodada", { ascending: true })
-      .order("tab_partida.id_partida", { ascending: true })
-      .order("tab_resultado_partida.data_criacao", { ascending: true });
+      .order("rodada", { ascending: true })
+      .order("id_partida", { ascending: true });
 
     if (error) {
       console.error("Erro ao buscar partidas:", error);
