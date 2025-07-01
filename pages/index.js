@@ -290,7 +290,7 @@ export default function Home() {
                           setDropdownOpen(false);
                         }}
                       >
-                        Rodada {p.rodada} - {p.id_partida} - {p.clubes_mandante?.descricao} x {p.clubes_visitante?.descricao} ({p.status_partida})
+                        Rodada {p.rodada} - Partida {p.id_partida} - {p.clubes_mandante?.descricao} x {p.clubes_visitante?.descricao} ({p.status_partida})
                       </li>
                     )) : (
                       <li className="p-2 text-gray-500">Nenhuma partida encontrada</li>
