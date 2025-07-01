@@ -99,7 +99,7 @@ export default function Home() {
     // Atualizar status da partida usando idSelecionado como string
     const { error: updateError } = await supabase
       .from("tab_partida")
-      .update({ status_partida: "LANCADO" })
+      .update({ status_partida: "LANÇADA" })
       .eq("id_partida", String(idSelecionado));  // <-- Aqui o ajuste importante!
 
     if (updateError) {
@@ -185,7 +185,7 @@ export default function Home() {
                   <tr key={p.id_partida} className="border-t">
                     <td>{p.rodada}</td>
                     <td>{p.id_partida}</td>
-                    <td className={`font-bold ${p.status_partida === 'LANCADO' ? 'text-green-600' : 'text-blue-600'}`}>
+                    <td className={`font-bold ${p.status_partida === 'LANÇADA' ? 'text-green-600' : 'text-blue-600'}`}>
                       {p.status_partida}
                     </td>
                     <td>{p.clubes_mandante?.descricao}</td>
