@@ -70,29 +70,27 @@ export default function Home() {
       setMessage("Selecione uma partida válida");
       return;
     }
-
     setLoading(true);
     setMessage("");
 
-    const idPartida = Number(form.id_partida);
+    // Converter valores para número, evitar problemas
+    const idPartidaNum = Number(form.id_partida);
 
     const objInsert = {
-      id_partida: idPartida,
+      id_partida: Number(form.id_partida),
       arbitro: form.arbitro,
       vencedor: form.vencedor,
-      placar_mandante: Number(form.placar_mandante),
-      placar_visitante: Number(form.placar_visitante),
-      felinos_mandante: Number(form.felinos_mandante),
-      felinos_visitante: Number(form.felinos_visitante),
-      penalidades_mandante: Number(form.penalidades_mandante),
-      penalidades_visitante: Number(form.penalidades_visitante),
-      sinucas_mandante: Number(form.sinucas_mandante),
-      sinucas_visitante: Number(form.sinucas_visitante)
+      placar_mandante: Number(form.placar_mandante) || 0,
+      placar_visitante: Number(form.placar_visitante) || 0,
+      felinos_mandante: Number(form.felinos_mandante) || 0,
+      felinos_visitante: Number(form.felinos_visitante) || 0,
+      penalidades_mandante: Number(form.penalidades_mandante) || 0,
+      penalidades_visitante: Number(form.penalidades_visitante) || 0,
+      sinucas_mandante: Number(form.sinucas_mandante) || 0,
+      sinucas_visitante: Number(form.sinucas_visitante) || 0,
     };
 
-    const { error: insertError } = await supabase
-      .from("tab_resultado_partida")
-      .insert(objInsert);
+    const { error: insertError } = await supabase.from("tab_resultado_partida").insert(objInsert);
 
     if (insertError) {
       setMessage("Erro ao salvar resultado: " + insertError.message);
@@ -100,15 +98,19 @@ export default function Home() {
       return;
     }
 
-    const { error: updateError } = await supabase
+    // Atualiza status da partida
+    const { data: updateData, error: updateError } = await supabase
       .from("tab_partida")
       .update({ status_partida: "LANÇADO" })
-      .eq("id_partida", idPartida);
+      .eq("id_partida", Number(objInsert.id_partida));
+
+    console.log("Resultado do UPDATE:", updateData);
+    console.log("Erro do UPDATE:", updateError);
 
     if (updateError) {
       setMessage("Erro ao atualizar status da partida: " + updateError.message);
     } else {
-      setMessage("Resultado salvo com sucesso!");
+      setMessage("Resultado salvo e status atualizado com sucesso!");
       setForm({
         id_partida: "",
         arbitro: "",
@@ -120,7 +122,7 @@ export default function Home() {
         penalidades_mandante: 0,
         penalidades_visitante: 0,
         sinucas_mandante: 0,
-        sinucas_visitante: 0
+        sinucas_visitante: 0,
       });
       setSearchTerm("");
       buscarPartidas();
@@ -129,12 +131,19 @@ export default function Home() {
     setLoading(false);
   };
 
+  // Filtro das partidas para o dropdown
+  console.log("Partidas carregadas:", partidas);
+  console.log("Texto buscado:", searchTerm);
+
   const partidasFiltradas = partidas.filter(p => {
-    const texto = `${p.rodada ?? ""} ${p.id_partida ?? ""} ${p.clubes_mandante?.descricao ?? ""} ${p.clubes_visitante?.descricao ?? ""}`.toLowerCase();
+    if (!searchTerm.trim()) return true;
+    const texto = `${p.rodada ?? ''} ${p.id_partida ?? ''} ${p.clubes_mandante?.descricao ?? ''} ${p.clubes_visitante?.descricao ?? ''}`.toLowerCase();
     return texto.includes(searchTerm.toLowerCase());
   });
 
-  const partidaSelecionada = partidas.find(p => p.id_partida === Number(form.id_partida));
+  console.log("Partidas filtradas:", partidasFiltradas);
+
+  const partidaSelecionada = partidas.find(p => p.id_partida === form.id_partida);
 
   const nomesValidos = [];
   if (partidaSelecionada) {
@@ -172,6 +181,7 @@ export default function Home() {
               <thead className="bg-gray-200">
                 <tr>
                   <th>Rodada</th><th>ID</th><th>Status</th><th>Mandante</th><th>Visitante</th>
+                  <th>Placar</th><th>Felinos</th><th>Penalidades</th><th>Sinucas</th>
                 </tr>
               </thead>
               <tbody>
@@ -184,30 +194,32 @@ export default function Home() {
                     </td>
                     <td>{p.clubes_mandante?.descricao}</td>
                     <td>{p.clubes_visitante?.descricao}</td>
+                    <td>{p.resultado?.placar_mandante ?? 0} x {p.resultado?.placar_visitante ?? 0}</td>
+                    <td>{p.resultado?.felinos_mandante ?? 0} x {p.resultado?.felinos_visitante ?? 0}</td>
+                    <td>{p.resultado?.penalidades_mandante ?? 0} x {p.resultado?.penalidades_visitante ?? 0}</td>
+                    <td>{p.resultado?.sinucas_mandante ?? 0} x {p.resultado?.sinucas_visitante ?? 0}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="space-y-6" ref={wrapperRef}>
+          <form onSubmit={handleSubmit} className="space-y-6" ref={wrapperRef} autoComplete="off">
             <div className="flex gap-4">
               <div className="w-1/2 relative">
                 <label className="font-medium">Partida</label>
                 <input
                   value={searchTerm}
-                  onChange={e => {
-                    setSearchTerm(e.target.value);
-                    setDropdownOpen(true);
-                  }}
+                  onChange={e => { setSearchTerm(e.target.value); setDropdownOpen(true); }}
                   onFocus={() => setDropdownOpen(true)}
                   className="w-full p-2 border rounded"
                   placeholder="Rodada ou Clube..."
+                  autoComplete="off"
                   required
                 />
                 {dropdownOpen && (
                   <ul className="absolute z-10 bg-white border w-full max-h-48 overflow-auto mt-1 rounded shadow">
-                    {partidasFiltradas.map(p => (
+                    {partidasFiltradas.length > 0 ? partidasFiltradas.map(p => (
                       <li key={p.id_partida} className="p-2 hover:bg-gray-200 cursor-pointer"
                         onClick={() => {
                           setForm(f => ({ ...f, id_partida: p.id_partida }));
@@ -216,7 +228,9 @@ export default function Home() {
                         }}>
                         Rodada {p.rodada} - {p.id_partida} - {p.clubes_mandante?.descricao} x {p.clubes_visitante?.descricao} ({p.status_partida})
                       </li>
-                    ))}
+                    )) : (
+                      <li className="p-2 text-gray-500">Nenhuma partida encontrada</li>
+                    )}
                   </ul>
                 )}
               </div>
@@ -240,32 +254,31 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              {["placar", "felinos", "penalidades", "sinucas"].map((campo, i) => (
-                <div key={i} className="border p-4 rounded bg-blue-50">
-                  <h3 className="text-center text-blue-800 font-bold capitalize mb-2">{campo}</h3>
-                  {[0, 1].map(j => {
-                    const tipo = j === 0 ? "mandante" : "visitante";
-                    const nome = j === 0
-                      ? partidaSelecionada?.clubes_mandante?.descricao || "Mandante"
-                      : partidaSelecionada?.clubes_visitante?.descricao || "Visitante";
-                    const key = `${campo}_${tipo}`;
+            {["Placar", "Felinos", "Penalidades", "Sinucas"].map((titulo, idx) => (
+              <div key={idx} className="border rounded-lg p-4 bg-blue-50 mb-4">
+                <h3 className="text-xl font-bold text-blue-800 text-center mb-4">{titulo}</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  {[0, 1].map(i => {
+                    const campo = `${titulo.toLowerCase()}_${i === 0 ? "mandante" : "visitante"}`;
+                    const nome = i === 0
+                      ? `${partidaSelecionada?.clubes_mandante?.descricao || "Mandante"}`
+                      : `${partidaSelecionada?.clubes_visitante?.descricao || "Visitante"}`;
                     return (
-                      <div key={key} className="mb-2 flex justify-between items-center">
-                        <span className="font-medium">{nome}</span>
-                        <div className="flex gap-2 items-center">
-                          <button type="button" onClick={() => alterarValor(key, -1)} className="bg-red-500 text-white px-2 rounded">-</button>
-                          <span>{form[key]}</span>
-                          <button type="button" onClick={() => alterarValor(key, 1)} className="bg-green-600 text-white px-2 rounded">+</button>
+                      <div key={campo} className="flex flex-col items-center">
+                        <label className="text-blue-700 font-semibold mb-1">{nome}</label>
+                        <div className="flex items-center gap-2">
+                          <button className="px-3 py-1 text-white bg-red-500 rounded" type="button" onClick={() => alterarValor(campo, -1)}>-</button>
+                          <span>{form[campo]}</span>
+                          <button className="px-3 py-1 text-white bg-green-600 rounded" type="button" onClick={() => alterarValor(campo, 1)}>+</button>
                         </div>
                       </div>
                     );
                   })}
                 </div>
-              ))}
-            </div>
+              </div>
+            ))}
 
-            <div className="flex gap-4 items-end mt-4">
+            <div className="flex gap-4">
               <div className="w-1/2">
                 <label className="font-medium">Vencedor</label>
                 <select
@@ -281,14 +294,14 @@ export default function Home() {
                   ))}
                 </select>
               </div>
-              <div className="w-1/2">
-                <button type="submit" disabled={loading} className="w-full bg-blue-600 text-white px-4 py-2 rounded">
+              <div className="w-1/2 flex items-end">
+                <button className="bg-blue-600 text-white px-6 py-2 rounded w-full" type="submit" disabled={loading}>
                   {loading ? "Salvando..." : "Salvar Resultado"}
                 </button>
               </div>
             </div>
 
-            {message && <p className="text-green-700 font-semibold mt-2">{message}</p>}
+            {message && <p className="text-green-700 font-semibold">{message}</p>}
           </form>
         )}
       </div>
