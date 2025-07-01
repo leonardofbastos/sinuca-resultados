@@ -206,6 +206,7 @@ export default function Home() {
                   <th>Penalidades</th>
                   <th>Sinucas</th>
                   <th>Árbitro</th>
+                  <th>Data Criação</th> {/* NOVA COLUNA */}
                 </tr>
               </thead>
               <tbody>
@@ -234,6 +235,7 @@ export default function Home() {
                           {resultado.sinucas_mandante ?? 0} x {resultado.sinucas_visitante ?? 0}
                         </td>
                         <td>{resultado.arbitro}</td>
+                        <td>{resultado.data_criacao ? new Date(resultado.data_criacao).toLocaleString() : "-"}</td> {/* FORMATAÇÃO */}
                       </tr>
                     ))
                   ) : (
@@ -245,7 +247,7 @@ export default function Home() {
                       </td>
                       <td>{partida.clubes_mandante?.descricao}</td>
                       <td>{partida.clubes_visitante?.descricao}</td>
-                      <td colSpan={6} className="text-center italic text-gray-500">
+                      <td colSpan={7} className="text-center italic text-gray-500">
                         {/* Nenhum resultado lançado */}
                       </td>
                     </tr>
