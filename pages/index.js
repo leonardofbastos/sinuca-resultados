@@ -6,7 +6,6 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 );
 
-// Juízes (nomes que não podem ser clubes)
 const nomes = [
   "Leonardo", "Douglas", "Sandro", "Vagner", "João",
   "Luis", "Pedro", "Iuri", "Gustavo", "Erick"
@@ -157,15 +156,14 @@ export default function Home() {
           <div className="flex gap-4 mb-4">
             <div className="w-1/2">
               <label className="block mb-1 font-medium">Partida</label>
-              <input
-                type="text"
-                placeholder="Buscar partida pelo ID, rodada ou clube..."
-                value={filtroPartida}
-                onChange={(e) => setFiltroPartida(e.target.value)}
+              <select
+                name="id_partida"
+                value={form.id_partida}
+                onChange={handleChange}
                 className="w-full p-2 border rounded"
-                list="partidas-list"
-              />
-              <datalist id="partidas-list">
+                required
+              >
+                <option value="">Selecione a Partida</option>
                 {partidasFiltradas.map((p) => (
                   <option
                     key={p.id_partida}
@@ -174,7 +172,14 @@ export default function Home() {
                     {p.id_partida} Rodada {p.rodada} - {p.clubes_mandante?.descricao} x {p.clubes_visitante?.descricao} ({p.status_partida})
                   </option>
                 ))}
-              </datalist>
+              </select>
+              <input
+                type="text"
+                placeholder="Buscar partida..."
+                value={filtroPartida}
+                onChange={(e) => setFiltroPartida(e.target.value)}
+                className="mt-2 p-2 w-full border rounded"
+              />
             </div>
 
             <div className="w-1/2">
