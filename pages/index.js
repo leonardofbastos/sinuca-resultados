@@ -104,6 +104,10 @@ export default function Home() {
       .update({ status_partida: "LANÇADO" })
       .eq("id_partida", objInsert.id_partida);
 
+    console.log("ID da partida usado no update:", objInsert.id_partida);
+    console.log("Resultado do UPDATE:", updateData);
+    console.log("Erro do UPDATE:", updateError);
+
     if (updateError) {
       setMessage("Erro ao atualizar status da partida: " + updateError.message);
     } else {
