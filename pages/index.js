@@ -58,34 +58,35 @@ export default function Home() {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setMessage("");
+  e.preventDefault();
+  setLoading(true);
+  setMessage("");
 
-    const { error } = await supabase.from("tab_resultado_partida").insert({ ...form });
+  const { error } = await supabase.from("tab_resultado_partida").insert({ ...form });
 
-    if (error) {
-      setMessage("Erro ao salvar resultado.");
-    } else {
-      setMessage("Resultado salvo com sucesso!");
-      setForm({
-        id_partida: "",
-        juiz: "",
-        vencedor: "",
-        placar_mandante: 0,
-        placar_visitante: 0,
-        felinos_mandante: 0,
-        felinos_visitante: 0,
-        penalidades_mandante: 0,
-        penalidades_visitante: 0,
-        sinucas_mandante: 0,
-        sinucas_visitante: 0
-      });
-      buscarResultados();
-    }
+  if (error) {
+    console.error("Erro Supabase:", error);
+    setMessage("Erro ao salvar resultado: " + error.message);
+  } else {
+    setMessage("Resultado salvo com sucesso!");
+    setForm({
+      id_partida: "",
+      juiz: "",
+      vencedor: "",
+      placar_mandante: 0,
+      placar_visitante: 0,
+      felinos_mandante: 0,
+      felinos_visitante: 0,
+      penalidades_mandante: 0,
+      penalidades_visitante: 0,
+      sinucas_mandante: 0,
+      sinucas_visitante: 0
+    });
+    buscarResultados();
+  }
 
-    setLoading(false);
-  };
+  setLoading(false);
+};
 
   const CampoContador = ({ titulo, campoMandante, campoVisitante }) => (
     <div className="border rounded-lg p-4 mb-4 bg-gray-50">
