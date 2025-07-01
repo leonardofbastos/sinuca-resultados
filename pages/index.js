@@ -47,6 +47,24 @@ export default function Home() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // const buscarPartidas = async () => {
+  //   const { data, error } = await supabase
+  //     .from("tab_partida")
+  //     .select(`
+  //       id_partida,
+  //       rodada,
+  //       status_partida,
+  //       clubes_mandante:tab_clube!id_clube_mandante(descricao),
+  //       clubes_visitante:tab_clube!id_clube_visitante(descricao)
+  //     `);
+
+  //   if (error) {
+  //     console.error("Erro ao buscar partidas:", error);
+  //   } else {
+  //     setPartidas(data);
+  //   }
+  // };
+
   const buscarPartidas = async () => {
     const { data, error } = await supabase
       .from("tab_partida")
@@ -55,13 +73,35 @@ export default function Home() {
         rodada,
         status_partida,
         clubes_mandante:tab_clube!id_clube_mandante(descricao),
-        clubes_visitante:tab_clube!id_clube_visitante(descricao)
+        clubes_visitante:tab_clube!id_clube_visitante(descricao),
+        resultados:tab_resultado_partida(
+          id_partida,
+          placar_mandante,
+          placar_visitante,
+          felinos_mandante,
+          felinos_visitante,
+          penalidades_mandante,
+          penalidades_visitante,
+          sinucas_mandante,
+          sinucas_visitante
+        )
       `);
 
     if (error) {
       console.error("Erro ao buscar partidas:", error);
     } else {
-      setPartidas(data);
+      // Para duplicar as linhas com múltiplos resultados
+      const partidasComResultados = data.flatMap(partida => {
+        if (!partida.resultados || partida.resultados.length === 0) {
+          return [{ ...partida, resultado: null }];
+        }
+        return partida.resultados.map(r => ({
+          ...partida,
+          resultado: r
+        }));
+      });
+
+      setPartidas(partidasComResultados);
     }
   };
 
@@ -162,7 +202,9 @@ export default function Home() {
 
       <div className="max-w-6xl mx-auto p-6">
         <div className="flex justify-between items-center mb-4">
-          <h1 className="text-3xl font-bold">Lançar Resultado</h1>
+          <h1 className="text-3xl font-bold">
+            {mostrarTabela ? "Todas as Partidas" : "Lançar Resultado"}
+          </h1>
           <button
             onClick={() => setMostrarTabela(!mostrarTabela)}
             className="bg-gray-800 text-white px-4 py-2 rounded hover:bg-gray-700"
