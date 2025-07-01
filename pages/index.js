@@ -26,6 +26,7 @@ export default function Home() {
     sinucas_visitante: 0
   });
 
+  const [idSelecionado, setIdSelecionado] = useState(null);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [partidas, setPartidas] = useState([]);
@@ -42,6 +43,7 @@ export default function Home() {
         setDropdownOpen(false);
       }
     }
+
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
@@ -66,18 +68,17 @@ export default function Home() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.id_partida) {
+
+    if (!idSelecionado) {
       setMessage("Selecione uma partida válida");
       return;
     }
+
     setLoading(true);
     setMessage("");
 
-    // Converter valores para número, evitar problemas
-    const idPartidaNum = Number(form.id_partida);
-
     const objInsert = {
-      id_partida: Number(form.id_partida),
+      id_partida: idSelecionado,
       arbitro: form.arbitro,
       vencedor: form.vencedor,
       placar_mandante: Number(form.placar_mandante) || 0,
@@ -87,10 +88,12 @@ export default function Home() {
       penalidades_mandante: Number(form.penalidades_mandante) || 0,
       penalidades_visitante: Number(form.penalidades_visitante) || 0,
       sinucas_mandante: Number(form.sinucas_mandante) || 0,
-      sinucas_visitante: Number(form.sinucas_visitante) || 0,
+      sinucas_visitante: Number(form.sinucas_visitante) || 0
     };
 
-    const { error: insertError } = await supabase.from("tab_resultado_partida").insert(objInsert);
+    const { error: insertError } = await supabase
+      .from("tab_resultado_partida")
+      .insert(objInsert);
 
     if (insertError) {
       setMessage("Erro ao salvar resultado: " + insertError.message);
@@ -98,14 +101,10 @@ export default function Home() {
       return;
     }
 
-    // Atualiza status da partida
-    const { data: updateData, error: updateError } = await supabase
+    const { error: updateError } = await supabase
       .from("tab_partida")
       .update({ status_partida: "LANÇADO" })
-      .eq("id_partida", Number(objInsert.id_partida));
-
-    console.log("Resultado do UPDATE:", updateData);
-    console.log("Erro do UPDATE:", updateError);
+      .eq("id_partida", idSelecionado);
 
     if (updateError) {
       setMessage("Erro ao atualizar status da partida: " + updateError.message);
@@ -122,18 +121,15 @@ export default function Home() {
         penalidades_mandante: 0,
         penalidades_visitante: 0,
         sinucas_mandante: 0,
-        sinucas_visitante: 0,
+        sinucas_visitante: 0
       });
       setSearchTerm("");
+      setIdSelecionado(null);
       buscarPartidas();
     }
 
     setLoading(false);
   };
-
-  // Filtro das partidas para o dropdown
-  console.log("Partidas carregadas:", partidas);
-  console.log("Texto buscado:", searchTerm);
 
   const partidasFiltradas = partidas.filter(p => {
     if (!searchTerm.trim()) return true;
@@ -141,9 +137,7 @@ export default function Home() {
     return texto.includes(searchTerm.toLowerCase());
   });
 
-  console.log("Partidas filtradas:", partidasFiltradas);
-
-  const partidaSelecionada = partidas.find(p => p.id_partida === form.id_partida);
+  const partidaSelecionada = partidas.find(p => p.id_partida === idSelecionado);
 
   const nomesValidos = [];
   if (partidaSelecionada) {
@@ -181,7 +175,6 @@ export default function Home() {
               <thead className="bg-gray-200">
                 <tr>
                   <th>Rodada</th><th>ID</th><th>Status</th><th>Mandante</th><th>Visitante</th>
-                  <th>Placar</th><th>Felinos</th><th>Penalidades</th><th>Sinucas</th>
                 </tr>
               </thead>
               <tbody>
@@ -194,10 +187,6 @@ export default function Home() {
                     </td>
                     <td>{p.clubes_mandante?.descricao}</td>
                     <td>{p.clubes_visitante?.descricao}</td>
-                    <td>{p.resultado?.placar_mandante ?? 0} x {p.resultado?.placar_visitante ?? 0}</td>
-                    <td>{p.resultado?.felinos_mandante ?? 0} x {p.resultado?.felinos_visitante ?? 0}</td>
-                    <td>{p.resultado?.penalidades_mandante ?? 0} x {p.resultado?.penalidades_visitante ?? 0}</td>
-                    <td>{p.resultado?.sinucas_mandante ?? 0} x {p.resultado?.sinucas_visitante ?? 0}</td>
                   </tr>
                 ))}
               </tbody>
@@ -223,6 +212,7 @@ export default function Home() {
                       <li key={p.id_partida} className="p-2 hover:bg-gray-200 cursor-pointer"
                         onClick={() => {
                           setForm(f => ({ ...f, id_partida: p.id_partida }));
+                          setIdSelecionado(p.id_partida);
                           setSearchTerm(`Rodada ${p.rodada} - ${p.id_partida} - ${p.clubes_mandante?.descricao} x ${p.clubes_visitante?.descricao}`);
                           setDropdownOpen(false);
                         }}>
@@ -245,14 +235,24 @@ export default function Home() {
                   required
                 >
                   <option value="">Selecione</option>
-                  {nomes
-                    .filter(n => !nomesValidos.includes(n))
-                    .map(nome => (
-                      <option key={nome} value={nome}>{nome}</option>
-                    ))}
+                  {nomes.filter(n => !nomesValidos.includes(n)).map(nome => (
+                    <option key={nome} value={nome}>{nome}</option>
+                  ))}
                 </select>
               </div>
             </div>
+
+            {idSelecionado && (
+              <div>
+                <label className="font-medium">Id Partida Selecionada</label>
+                <input
+                  type="text"
+                  value={idSelecionado}
+                  className="w-full p-2 border rounded bg-gray-100"
+                  disabled
+                />
+              </div>
+            )}
 
             {["Placar", "Felinos", "Penalidades", "Sinucas"].map((titulo, idx) => (
               <div key={idx} className="border rounded-lg p-4 bg-blue-50 mb-4">
