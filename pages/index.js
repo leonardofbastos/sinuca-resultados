@@ -88,7 +88,7 @@ export default function Home() {
       `)
       .order("tab_partida.rodada", { ascending: true })
       .order("tab_partida.id_partida", { ascending: true })
-      .order("tab_resultado_partida.data_criacao", { ascending: false });
+      .order("tab_resultado_partida.data_criacao", { ascending: true });
 
     if (error) {
       console.error("Erro ao buscar partidas:", error);
