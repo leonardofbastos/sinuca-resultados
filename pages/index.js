@@ -1,5 +1,4 @@
-// Novo index.js com layout aprimorado
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { createClient } from "@supabase/supabase-js";
 
 const supabase = createClient(
@@ -31,11 +30,23 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [resultados, setResultados] = useState([]);
   const [partidas, setPartidas] = useState([]);
-  const [buscaPartida, setBuscaPartida] = useState("");
+
+  const [searchTerm, setSearchTerm] = useState("");
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const wrapperRef = useRef(null);
 
   useEffect(() => {
     buscarResultados();
     buscarPartidas();
+
+    // Fecha dropdown se clicar fora
+    function handleClickOutside(event) {
+      if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
+        setDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   const buscarResultados = async () => {
@@ -51,25 +62,54 @@ export default function Home() {
   const buscarPartidas = async () => {
     const { data, error } = await supabase
       .from("tab_partida")
-      .select(`id_partida, status_partida, clubes_mandante:tab_clube!tab_partida_id_clube_mandante_fkey(descricao), clubes_visitante:tab_clube!tab_partida_id_clube_visitante_fkey(descricao)`);
+      .select(`id_partida, rodada, status_partida, 
+        clubes_mandante:tab_clube!tab_partida_id_clube_mandante_fkey(descricao), 
+        clubes_visitante:tab_clube!tab_partida_id_clube_visitante_fkey(descricao)`);
 
     if (!error) setPartidas(data);
   };
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
+  const handleInputChange = (e) => {
+    setSearchTerm(e.target.value);
+    setDropdownOpen(true);
+  };
+
+  const selecionarPartida = (p) => {
+    setForm(prev => ({
+      ...prev,
+      id_partida: p.id_partida,
+      placar_mandante: 0,
+      placar_visitante: 0,
+      felinos_mandante: 0,
+      felinos_visitante: 0,
+      penalidades_mandante: 0,
+      penalidades_visitante: 0,
+      sinucas_mandante: 0,
+      sinucas_visitante: 0,
+      vencedor: "",
+    }));
+    setSearchTerm(`${p.rodada} - ${p.id_partida} - ${p.clubes_mandante?.descricao} x ${p.clubes_visitante?.descricao} (${p.status_partida})`);
+    setDropdownOpen(false);
   };
 
   const alterarValor = (campo, incremento) => {
-    setForm((prev) => ({
+    setForm(prev => ({
       ...prev,
       [campo]: Math.max(0, prev[campo] + incremento)
     }));
   };
 
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setForm(prev => ({ ...prev, [name]: value }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!form.id_partida) {
+      setMessage("Selecione uma partida válida");
+      return;
+    }
     setLoading(true);
     setMessage("");
 
@@ -95,6 +135,7 @@ export default function Home() {
         sinucas_mandante: 0,
         sinucas_visitante: 0
       });
+      setSearchTerm("");
       buscarResultados();
       buscarPartidas();
     } else {
@@ -104,25 +145,53 @@ export default function Home() {
     setLoading(false);
   };
 
-  const CampoContador = ({ titulo, campoMandante, campoVisitante }) => (
-    <div className="border rounded-lg p-4 mb-4 bg-gray-50">
-      <h3 className="text-xl font-semibold mb-4 text-center">{titulo}</h3>
-      <div className="grid grid-cols-2 gap-4 text-center">
-        {[campoMandante, campoVisitante].map((campo, idx) => (
-          <div key={campo} className="flex flex-col items-center">
-            <label className="mb-1 font-medium">{idx === 0 ? "Mandante" : "Visitante"}</label>
-            <div className="flex items-center gap-2 justify-center">
-              <button type="button" className="px-2 py-1 bg-red-500 text-white rounded" onClick={() => alterarValor(campo, -1)}>-</button>
-              <span className="w-8 text-center">{form[campo]}</span>
-              <button type="button" className="px-2 py-1 bg-green-600 text-white rounded" onClick={() => alterarValor(campo, 1)}>+</button>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
+  const CampoContador = ({ titulo, campoMandante, campoVisitante }) => {
+    // Descobre nomes mandante/visitante para exibir no topo
+    const partidaSelecionada = partidas.find(p => p.id_partida === form.id_partida);
+    const mandanteNome = partidaSelecionada?.clubes_mandante?.descricao || "";
+    const visitanteNome = partidaSelecionada?.clubes_visitante?.descricao || "";
 
-  const partidasFiltradas = partidas.filter(p => p.id_partida.toString().includes(buscaPartida));
+    return (
+      <div className="border rounded-lg p-4 mb-4 bg-gray-50">
+        <h3 className="text-xl font-semibold mb-4 text-center">{titulo}</h3>
+        {mandanteNome && visitanteNome && (
+          <p className="text-center mb-3 font-medium">
+            {mandanteNome} (Mandante) x {visitanteNome} (Visitante)
+          </p>
+        )}
+        <div className="grid grid-cols-2 gap-4 text-center">
+          {[campoMandante, campoVisitante].map((campo, idx) => (
+            <div key={campo} className="flex flex-col items-center">
+              <label className="mb-1 font-medium">{idx === 0 ? "Mandante" : "Visitante"}</label>
+              <div className="flex items-center gap-2 justify-center">
+                <button
+                  type="button"
+                  className="px-2 py-1 bg-red-500 text-white rounded"
+                  onClick={() => alterarValor(campo, -1)}
+                >
+                  -
+                </button>
+                <span className="w-8 text-center">{form[campo]}</span>
+                <button
+                  type="button"
+                  className="px-2 py-1 bg-green-600 text-white rounded"
+                  onClick={() => alterarValor(campo, 1)}
+                >
+                  +
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  // Filtra partidas para o dropdown baseado no que foi digitado
+  const partidasFiltradas = partidas.filter(p => {
+    const texto = `${p.rodada} ${p.id_partida} ${p.clubes_mandante?.descricao} ${p.clubes_visitante?.descricao} ${p.status_partida}`.toLowerCase();
+    return texto.includes(searchTerm.toLowerCase());
+  });
 
   return (
     <div>
@@ -141,37 +210,43 @@ export default function Home() {
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block mb-1 font-medium">Buscar ID da Partida</label>
-              <input
-                type="text"
-                className="w-full p-2 border rounded mb-2"
-                placeholder="Digite o ID da partida"
-                value={buscaPartida}
-                onChange={(e) => setBuscaPartida(e.target.value)}
-              />
-              <label className="block mb-1 font-medium">Partida</label>
-              <select name="id_partida" value={form.id_partida} onChange={handleChange} className="w-full p-2 border rounded" required>
-                <option value="">Selecione a Partida</option>
-                {partidasFiltradas.map((p) => (
-                  <option key={p.id_partida} value={p.id_partida}>
-                    {p.id_partida} - {p.clubes_mandante?.descricao} x {p.clubes_visitante?.descricao} ({p.status_partida})
-                  </option>
+        <form onSubmit={handleSubmit} className="space-y-6" autoComplete="off" ref={wrapperRef}>
+          <div className="relative">
+            <label className="block mb-1 font-medium">Partida</label>
+            <input
+              type="text"
+              name="id_partida"
+              value={searchTerm}
+              onChange={handleInputChange}
+              onFocus={() => setDropdownOpen(true)}
+              placeholder="Digite o número ou parte da partida"
+              className="w-full p-2 border rounded"
+              autoComplete="off"
+              required
+            />
+            {dropdownOpen && partidasFiltradas.length > 0 && (
+              <ul className="absolute z-10 bg-white border max-h-48 overflow-auto w-full mt-1 rounded shadow-lg">
+                {partidasFiltradas.map(p => (
+                  <li
+                    key={p.id_partida}
+                    onClick={() => selecionarPartida(p)}
+                    className="p-2 cursor-pointer hover:bg-gray-200"
+                  >
+                    {p.rodada} - {p.id_partida} - {p.clubes_mandante?.descricao} x {p.clubes_visitante?.descricao} ({p.status_partida})
+                  </li>
                 ))}
-              </select>
-            </div>
+              </ul>
+            )}
+          </div>
 
-            <div>
-              <label className="block mb-1 font-medium">Juiz</label>
-              <select name="juiz" value={form.juiz} onChange={handleChange} className="w-full p-2 border rounded" required>
-                <option value="">Selecione o Juiz</option>
-                {nomes.map((nome) => (
-                  <option key={nome} value={nome}>{nome}</option>
-                ))}
-              </select>
-            </div>
+          <div>
+            <label className="block mb-1 font-medium">Juiz</label>
+            <select name="juiz" value={form.juiz} onChange={handleChange} className="w-full p-2 border rounded" required>
+              <option value="">Selecione o Juiz</option>
+              {nomes.map((nome) => (
+                <option key={nome} value={nome}>{nome}</option>
+              ))}
+            </select>
           </div>
 
           <CampoContador titulo="Placar" campoMandante="placar_mandante" campoVisitante="placar_visitante" />
