@@ -50,18 +50,17 @@ export default function Home() {
     const { data, error } = await supabase
       .from("tab_partida")
       .select(`
-        id_partida, rodada, status_partida,
-        clubes_mandante:tab_clube!tab_partida_id_clube_mandante_fkey(descricao),
-        clubes_visitante:tab_clube!tab_partida_id_clube_visitante_fkey(descricao),
-        resultado:tab_resultado_partida(id_partida, vencedor, placar_mandante, placar_visitante, felinos_mandante, felinos_visitante, penalidades_mandante, penalidades_visitante, sinucas_mandante, sinucas_visitante)
+        id_partida,
+        rodada,
+        status_partida,
+        clubes_mandante:tab_clube!id_clube_mandante(descricao),
+        clubes_visitante:tab_clube!id_clube_visitante(descricao)
       `);
 
     if (error) {
       console.error("Erro ao buscar partidas:", error);
-      setPartidas([]);
     } else {
-      console.log("Partidas carregadas:", data);
-      setPartidas(data || []);
+      setPartidas(data);
     }
   };
 
