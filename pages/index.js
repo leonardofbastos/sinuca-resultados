@@ -30,9 +30,11 @@ export default function Home() {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [resultados, setResultados] = useState([]);
+  const [partidas, setPartidas] = useState([]);
 
   useEffect(() => {
     buscarResultados();
+    buscarPartidas();
   }, []);
 
   const buscarResultados = async () => {
@@ -43,6 +45,14 @@ export default function Home() {
       .limit(10);
 
     if (!error) setResultados(data);
+  };
+
+  const buscarPartidas = async () => {
+    const { data, error } = await supabase
+      .from("tab_partida")
+      .select(`id_partida, status_partida, clubes_mandante:tab_clube!tab_partida_id_clube_mandante_fkey(descricao), clubes_visitante:tab_clube!tab_partida_id_clube_visitante_fkey(descricao)`);
+
+    if (!error) setPartidas(data);
   };
 
   const handleChange = (e) => {
@@ -58,35 +68,40 @@ export default function Home() {
   };
 
   const handleSubmit = async (e) => {
-  e.preventDefault();
-  setLoading(true);
-  setMessage("");
+    e.preventDefault();
+    setLoading(true);
+    setMessage("");
 
-  const { error } = await supabase.from("tab_resultado_partida").insert({ ...form });
+    const { error } = await supabase.from("tab_resultado_partida").insert({ ...form });
 
-  if (error) {
-    console.error("Erro Supabase:", error);
-    setMessage("Erro ao salvar resultado: " + error.message);
-  } else {
-    setMessage("Resultado salvo com sucesso!");
-    setForm({
-      id_partida: "",
-      juiz: "",
-      vencedor: "",
-      placar_mandante: 0,
-      placar_visitante: 0,
-      felinos_mandante: 0,
-      felinos_visitante: 0,
-      penalidades_mandante: 0,
-      penalidades_visitante: 0,
-      sinucas_mandante: 0,
-      sinucas_visitante: 0
-    });
-    buscarResultados();
-  }
+    if (!error) {
+      await supabase
+        .from("tab_partida")
+        .update({ status_partida: "LANÇADO" })
+        .eq("id_partida", form.id_partida);
 
-  setLoading(false);
-};
+      setMessage("Resultado salvo com sucesso!");
+      setForm({
+        id_partida: "",
+        juiz: "",
+        vencedor: "",
+        placar_mandante: 0,
+        placar_visitante: 0,
+        felinos_mandante: 0,
+        felinos_visitante: 0,
+        penalidades_mandante: 0,
+        penalidades_visitante: 0,
+        sinucas_mandante: 0,
+        sinucas_visitante: 0
+      });
+      buscarResultados();
+      buscarPartidas();
+    } else {
+      setMessage("Erro ao salvar resultado.");
+    }
+
+    setLoading(false);
+  };
 
   const CampoContador = ({ titulo, campoMandante, campoVisitante }) => (
     <div className="border rounded-lg p-4 mb-4 bg-gray-50">
@@ -124,18 +139,17 @@ export default function Home() {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block mb-1 font-medium">ID Partida</label>
-              <input
-                type="text"
-                name="id_partida"
-                placeholder="ID Partida"
-                value={form.id_partida}
-                onChange={handleChange}
-                className="w-full p-2 border rounded"
-                required
-              />
+              <label className="block mb-1 font-medium">Partida</label>
+              <select name="id_partida" value={form.id_partida} onChange={handleChange} className="w-full p-2 border rounded" required>
+                <option value="">Selecione a Partida</option>
+                {partidas.map((p) => (
+                  <option key={p.id_partida} value={p.id_partida}>
+                    {p.id_partida} - {p.clubes_mandante?.descricao} x {p.clubes_visitante?.descricao} ({p.status_partida})
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div>
@@ -147,22 +161,22 @@ export default function Home() {
                 ))}
               </select>
             </div>
-
-            <div>
-              <label className="block mb-1 font-medium">Vencedor</label>
-              <select name="vencedor" value={form.vencedor} onChange={handleChange} className="w-full p-2 border rounded" required>
-                <option value="">Selecione o Vencedor</option>
-                {nomes.map((nome) => (
-                  <option key={nome} value={nome}>{nome}</option>
-                ))}
-              </select>
-            </div>
           </div>
 
           <CampoContador titulo="Placar" campoMandante="placar_mandante" campoVisitante="placar_visitante" />
           <CampoContador titulo="Penalidades" campoMandante="penalidades_mandante" campoVisitante="penalidades_visitante" />
           <CampoContador titulo="Felinos" campoMandante="felinos_mandante" campoVisitante="felinos_visitante" />
           <CampoContador titulo="Sinucas" campoMandante="sinucas_mandante" campoVisitante="sinucas_visitante" />
+
+          <div>
+            <label className="block mb-1 font-medium">Vencedor</label>
+            <select name="vencedor" value={form.vencedor} onChange={handleChange} className="w-full p-2 border rounded" required>
+              <option value="">Selecione o Vencedor</option>
+              {nomes.map((nome) => (
+                <option key={nome} value={nome}>{nome}</option>
+              ))}
+            </select>
+          </div>
 
           <button
             type="submit"
