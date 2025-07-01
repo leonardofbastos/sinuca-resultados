@@ -246,7 +246,7 @@ export default function Home() {
                       <td>{partida.clubes_mandante?.descricao}</td>
                       <td>{partida.clubes_visitante?.descricao}</td>
                       <td colSpan={6} className="text-center italic text-gray-500">
-                        Nenhum resultado lançado
+                        {/* Nenhum resultado lançado */}
                       </td>
                     </tr>
                   )
