@@ -39,7 +39,6 @@ export default function Home() {
     buscarResultados();
     buscarPartidas();
 
-    // Fecha dropdown se clicar fora
     function handleClickOutside(event) {
       if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
         setDropdownOpen(false);
@@ -88,7 +87,7 @@ export default function Home() {
       sinucas_visitante: 0,
       vencedor: "",
     }));
-    setSearchTerm(`${p.rodada} - ${p.id_partida} - ${p.clubes_mandante?.descricao} x ${p.clubes_visitante?.descricao} (${p.status_partida})`);
+    setSearchTerm(`Rodada ${p.rodada} - ${p.id_partida} - ${p.clubes_mandante?.descricao} x ${p.clubes_visitante?.descricao} (${p.status_partida})`);
     setDropdownOpen(false);
   };
 
@@ -146,23 +145,17 @@ export default function Home() {
   };
 
   const CampoContador = ({ titulo, campoMandante, campoVisitante }) => {
-    // Descobre nomes mandante/visitante para exibir no topo
     const partidaSelecionada = partidas.find(p => p.id_partida === form.id_partida);
-    const mandanteNome = partidaSelecionada?.clubes_mandante?.descricao || "";
-    const visitanteNome = partidaSelecionada?.clubes_visitante?.descricao || "";
+    const mandanteNome = partidaSelecionada?.clubes_mandante?.descricao || "Mandante";
+    const visitanteNome = partidaSelecionada?.clubes_visitante?.descricao || "Visitante";
 
     return (
-      <div className="border rounded-lg p-4 mb-4 bg-gray-50">
-        <h3 className="text-xl font-semibold mb-4 text-center">{titulo}</h3>
-        {mandanteNome && visitanteNome && (
-          <p className="text-center mb-3 font-medium">
-            {mandanteNome} (Mandante) x {visitanteNome} (Visitante)
-          </p>
-        )}
+      <div className="border rounded-lg p-4 mb-4 bg-blue-50">
+        <h3 className="text-xl font-bold mb-4 text-center text-blue-800">{titulo}</h3>
         <div className="grid grid-cols-2 gap-4 text-center">
           {[campoMandante, campoVisitante].map((campo, idx) => (
             <div key={campo} className="flex flex-col items-center">
-              <label className="mb-1 font-medium">{idx === 0 ? "Mandante" : "Visitante"}</label>
+              <label className="mb-1 font-semibold text-blue-700">{idx === 0 ? mandanteNome : visitanteNome}</label>
               <div className="flex items-center gap-2 justify-center">
                 <button
                   type="button"
@@ -187,7 +180,6 @@ export default function Home() {
     );
   };
 
-  // Filtra partidas para o dropdown baseado no que foi digitado
   const partidasFiltradas = partidas.filter(p => {
     const texto = `${p.rodada} ${p.id_partida} ${p.clubes_mandante?.descricao} ${p.clubes_visitante?.descricao} ${p.status_partida}`.toLowerCase();
     return texto.includes(searchTerm.toLowerCase());
@@ -211,42 +203,44 @@ export default function Home() {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6" autoComplete="off" ref={wrapperRef}>
-          <div className="relative">
-            <label className="block mb-1 font-medium">Partida</label>
-            <input
-              type="text"
-              name="id_partida"
-              value={searchTerm}
-              onChange={handleInputChange}
-              onFocus={() => setDropdownOpen(true)}
-              placeholder="Digite o número ou parte da partida"
-              className="w-full p-2 border rounded"
-              autoComplete="off"
-              required
-            />
-            {dropdownOpen && partidasFiltradas.length > 0 && (
-              <ul className="absolute z-10 bg-white border max-h-48 overflow-auto w-full mt-1 rounded shadow-lg">
-                {partidasFiltradas.map(p => (
-                  <li
-                    key={p.id_partida}
-                    onClick={() => selecionarPartida(p)}
-                    className="p-2 cursor-pointer hover:bg-gray-200"
-                  >
-                    {p.rodada} - {p.id_partida} - {p.clubes_mandante?.descricao} x {p.clubes_visitante?.descricao} ({p.status_partida})
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
+          <div className="flex gap-4 mb-6">
+            <div className="w-1/2 relative">
+              <label className="block mb-1 font-medium">Partida</label>
+              <input
+                type="text"
+                name="id_partida"
+                value={searchTerm}
+                onChange={handleInputChange}
+                onFocus={() => setDropdownOpen(true)}
+                placeholder="Digite o número ou parte da partida"
+                className="w-full p-2 border rounded"
+                autoComplete="off"
+                required
+              />
+              {dropdownOpen && partidasFiltradas.length > 0 && (
+                <ul className="absolute z-10 bg-white border max-h-48 overflow-auto w-full mt-1 rounded shadow-lg">
+                  {partidasFiltradas.map(p => (
+                    <li
+                      key={p.id_partida}
+                      onClick={() => selecionarPartida(p)}
+                      className="p-2 cursor-pointer hover:bg-gray-200"
+                    >
+                      Rodada {p.rodada} - {p.id_partida} - {p.clubes_mandante?.descricao} x {p.clubes_visitante?.descricao} ({p.status_partida})
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
 
-          <div>
-            <label className="block mb-1 font-medium">Juiz</label>
-            <select name="juiz" value={form.juiz} onChange={handleChange} className="w-full p-2 border rounded" required>
-              <option value="">Selecione o Juiz</option>
-              {nomes.map((nome) => (
-                <option key={nome} value={nome}>{nome}</option>
-              ))}
-            </select>
+            <div className="w-1/2">
+              <label className="block mb-1 font-medium">Juiz</label>
+              <select name="juiz" value={form.juiz} onChange={handleChange} className="w-full p-2 border rounded" required>
+                <option value="">Selecione o Juiz</option>
+                {nomes.map((nome) => (
+                  <option key={nome} value={nome}>{nome}</option>
+                ))}
+              </select>
+            </div>
           </div>
 
           <CampoContador titulo="Placar" campoMandante="placar_mandante" campoVisitante="placar_visitante" />
@@ -254,23 +248,25 @@ export default function Home() {
           <CampoContador titulo="Felinos" campoMandante="felinos_mandante" campoVisitante="felinos_visitante" />
           <CampoContador titulo="Sinucas" campoMandante="sinucas_mandante" campoVisitante="sinucas_visitante" />
 
-          <div>
-            <label className="block mb-1 font-medium">Vencedor</label>
-            <select name="vencedor" value={form.vencedor} onChange={handleChange} className="w-full p-2 border rounded" required>
-              <option value="">Selecione o Vencedor</option>
-              {nomes.map((nome) => (
-                <option key={nome} value={nome}>{nome}</option>
-              ))}
-            </select>
-          </div>
+          <div className="flex items-end gap-4">
+            <div className="flex-grow">
+              <label className="block mb-1 font-medium">Vencedor</label>
+              <select name="vencedor" value={form.vencedor} onChange={handleChange} className="w-full p-2 border rounded" required>
+                <option value="">Selecione o Vencedor</option>
+                {nomes.map((nome) => (
+                  <option key={nome} value={nome}>{nome}</option>
+                ))}
+              </select>
+            </div>
 
-          <button
-            type="submit"
-            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-            disabled={loading}
-          >
-            {loading ? "Salvando..." : "Salvar Resultado"}
-          </button>
+            <button
+              type="submit"
+              className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 whitespace-nowrap"
+              disabled={loading}
+            >
+              {loading ? "Salvando..." : "Salvar Resultado"}
+            </button>
+          </div>
 
           {message && <p className="mt-2 text-green-700 font-semibold">{message}</p>}
         </form>
