@@ -73,6 +73,9 @@ export default function Home() {
     setLoading(true);
     setMessage("");
 
+    // Converter valores para número, evitar problemas
+    const idPartidaNum = Number(form.id_partida);
+
     const objInsert = {
       id_partida: Number(form.id_partida),
       arbitro: form.arbitro,
