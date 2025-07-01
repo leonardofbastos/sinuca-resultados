@@ -26,13 +26,13 @@ export default function Home() {
     sinucas_visitante: 0
   });
 
-  const [idSelecionado, setIdSelecionado] = useState(null);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [partidas, setPartidas] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [mostrarTabela, setMostrarTabela] = useState(false);
+  const [idSelecionado, setIdSelecionado] = useState(""); // <-- Guarda o id_partida selecionado explicitamente
   const wrapperRef = useRef(null);
 
   useEffect(() => {
@@ -43,7 +43,6 @@ export default function Home() {
         setDropdownOpen(false);
       }
     }
-
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
@@ -68,17 +67,15 @@ export default function Home() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     if (!idSelecionado) {
       setMessage("Selecione uma partida válida");
       return;
     }
-
     setLoading(true);
     setMessage("");
 
     const objInsert = {
-      id_partida: idSelecionado,
+      id_partida: Number(idSelecionado),
       arbitro: form.arbitro,
       vencedor: form.vencedor,
       placar_mandante: Number(form.placar_mandante) || 0,
@@ -88,63 +85,68 @@ export default function Home() {
       penalidades_mandante: Number(form.penalidades_mandante) || 0,
       penalidades_visitante: Number(form.penalidades_visitante) || 0,
       sinucas_mandante: Number(form.sinucas_mandante) || 0,
-      sinucas_visitante: Number(form.sinucas_visitante) || 0
+      sinucas_visitante: Number(form.sinucas_visitante) || 0,
     };
 
-    const { error: insertError } = await supabase
-      .from("tab_resultado_partida")
-      .insert(objInsert);
-
+    // Inserir resultado
+    const { error: insertError } = await supabase.from("tab_resultado_partida").insert(objInsert);
     if (insertError) {
       setMessage("Erro ao salvar resultado: " + insertError.message);
       setLoading(false);
       return;
     }
 
+    // Atualizar status da partida usando idSelecionado como string
     const { error: updateError } = await supabase
       .from("tab_partida")
       .update({ status_partida: "LANÇADO" })
-      .eq("id_partida", idSelecionado);
+      .eq("id_partida", String(idSelecionado));  // <-- Aqui o ajuste importante!
 
     if (updateError) {
       setMessage("Erro ao atualizar status da partida: " + updateError.message);
-    } else {
-      setMessage("Resultado salvo e status atualizado com sucesso!");
-      setForm({
-        id_partida: "",
-        arbitro: "",
-        vencedor: "",
-        placar_mandante: 0,
-        placar_visitante: 0,
-        felinos_mandante: 0,
-        felinos_visitante: 0,
-        penalidades_mandante: 0,
-        penalidades_visitante: 0,
-        sinucas_mandante: 0,
-        sinucas_visitante: 0
-      });
-      setSearchTerm("");
-      setIdSelecionado(null);
-      buscarPartidas();
+      setLoading(false);
+      return;
     }
 
+    setMessage("Resultado salvo e status atualizado com sucesso!");
+
+    setForm({
+      id_partida: "",
+      arbitro: "",
+      vencedor: "",
+      placar_mandante: 0,
+      placar_visitante: 0,
+      felinos_mandante: 0,
+      felinos_visitante: 0,
+      penalidades_mandante: 0,
+      penalidades_visitante: 0,
+      sinucas_mandante: 0,
+      sinucas_visitante: 0,
+    });
+    setSearchTerm("");
+    setIdSelecionado("");
+    buscarPartidas();
     setLoading(false);
   };
 
+  // Filtro para dropdown de partidas
   const partidasFiltradas = partidas.filter(p => {
     if (!searchTerm.trim()) return true;
     const texto = `${p.rodada ?? ''} ${p.id_partida ?? ''} ${p.clubes_mandante?.descricao ?? ''} ${p.clubes_visitante?.descricao ?? ''}`.toLowerCase();
     return texto.includes(searchTerm.toLowerCase());
   });
 
-  const partidaSelecionada = partidas.find(p => p.id_partida === idSelecionado);
+  // Encontra partida selecionada pelo idSelecionado (que é número/string coerente)
+  const partidaSelecionada = partidas.find(p => p.id_partida === Number(idSelecionado));
 
+  // Para filtro de nomes já usados na partida
   const nomesValidos = [];
   if (partidaSelecionada) {
     if (partidaSelecionada.clubes_mandante?.descricao) nomesValidos.push(partidaSelecionada.clubes_mandante.descricao);
     if (partidaSelecionada.clubes_visitante?.descricao) nomesValidos.push(partidaSelecionada.clubes_visitante.descricao);
   }
 
+  // Incrementa/decrementa os valores no form
   const alterarValor = (campo, incremento) => {
     setForm(prev => ({
       ...prev,
@@ -175,6 +177,7 @@ export default function Home() {
               <thead className="bg-gray-200">
                 <tr>
                   <th>Rodada</th><th>ID</th><th>Status</th><th>Mandante</th><th>Visitante</th>
+                  <th>Placar</th><th>Felinos</th><th>Penalidades</th><th>Sinucas</th>
                 </tr>
               </thead>
               <tbody>
@@ -187,6 +190,10 @@ export default function Home() {
                     </td>
                     <td>{p.clubes_mandante?.descricao}</td>
                     <td>{p.clubes_visitante?.descricao}</td>
+                    <td>{p.resultado?.placar_mandante ?? 0} x {p.resultado?.placar_visitante ?? 0}</td>
+                    <td>{p.resultado?.felinos_mandante ?? 0} x {p.resultado?.felinos_visitante ?? 0}</td>
+                    <td>{p.resultado?.penalidades_mandante ?? 0} x {p.resultado?.penalidades_visitante ?? 0}</td>
+                    <td>{p.resultado?.sinucas_mandante ?? 0} x {p.resultado?.sinucas_visitante ?? 0}</td>
                   </tr>
                 ))}
               </tbody>
@@ -199,7 +206,12 @@ export default function Home() {
                 <label className="font-medium">Partida</label>
                 <input
                   value={searchTerm}
-                  onChange={e => { setSearchTerm(e.target.value); setDropdownOpen(true); }}
+                  onChange={e => {
+                    setSearchTerm(e.target.value);
+                    setDropdownOpen(true);
+                    setIdSelecionado(""); // limpa ao digitar novo texto
+                    setForm(f => ({ ...f, id_partida: "" }));
+                  }}
                   onFocus={() => setDropdownOpen(true)}
                   className="w-full p-2 border rounded"
                   placeholder="Rodada ou Clube..."
@@ -209,13 +221,16 @@ export default function Home() {
                 {dropdownOpen && (
                   <ul className="absolute z-10 bg-white border w-full max-h-48 overflow-auto mt-1 rounded shadow">
                     {partidasFiltradas.length > 0 ? partidasFiltradas.map(p => (
-                      <li key={p.id_partida} className="p-2 hover:bg-gray-200 cursor-pointer"
+                      <li
+                        key={p.id_partida}
+                        className="p-2 hover:bg-gray-200 cursor-pointer"
                         onClick={() => {
                           setForm(f => ({ ...f, id_partida: p.id_partida }));
-                          setIdSelecionado(p.id_partida);
                           setSearchTerm(`Rodada ${p.rodada} - ${p.id_partida} - ${p.clubes_mandante?.descricao} x ${p.clubes_visitante?.descricao}`);
+                          setIdSelecionado(String(p.id_partida)); // <-- salva ID selecionado aqui
                           setDropdownOpen(false);
-                        }}>
+                        }}
+                      >
                         Rodada {p.rodada} - {p.id_partida} - {p.clubes_mandante?.descricao} x {p.clubes_visitante?.descricao} ({p.status_partida})
                       </li>
                     )) : (
@@ -226,33 +241,34 @@ export default function Home() {
               </div>
 
               <div className="w-1/2">
-                <label className="font-medium">Árbitro</label>
-                <select
-                  name="arbitro"
-                  value={form.arbitro}
-                  onChange={e => setForm(f => ({ ...f, arbitro: e.target.value }))}
-                  className="w-full p-2 border rounded"
-                  required
-                >
-                  <option value="">Selecione</option>
-                  {nomes.filter(n => !nomesValidos.includes(n)).map(nome => (
-                    <option key={nome} value={nome}>{nome}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            {idSelecionado && (
-              <div>
                 <label className="font-medium">Id Partida Selecionada</label>
                 <input
                   type="text"
+                  readOnly
                   value={idSelecionado}
                   className="w-full p-2 border rounded bg-gray-100"
-                  disabled
+                  placeholder="Nenhuma partida selecionada"
                 />
               </div>
-            )}
+            </div>
+
+            <div className="w-1/2">
+              <label className="font-medium">Árbitro</label>
+              <select
+                name="arbitro"
+                value={form.arbitro}
+                onChange={e => setForm(f => ({ ...f, arbitro: e.target.value }))}
+                className="w-full p-2 border rounded"
+                required
+              >
+                <option value="">Selecione</option>
+                {nomes
+                  .filter(n => !nomesValidos.includes(n))
+                  .map(nome => (
+                    <option key={nome} value={nome}>{nome}</option>
+                  ))}
+              </select>
+            </div>
 
             {["Placar", "Felinos", "Penalidades", "Sinucas"].map((titulo, idx) => (
               <div key={idx} className="border rounded-lg p-4 bg-blue-50 mb-4">
