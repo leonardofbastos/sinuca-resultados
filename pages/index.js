@@ -164,13 +164,18 @@ export default function Home() {
               </div>
               <div className="w-1/2">
                 <label className="font-medium">Árbitro</label>
-                <select name="arbitro" value={form.arbitro} onChange={e => setForm(f => ({ ...f, arbitro: e.target.value }))}
-                  className="w-full p-2 border rounded" required>
+                <select
+                  name="arbitro"
+                  value={form.arbitro}
+                  onChange={e => setForm(f => ({ ...f, arbitro: e.target.value }))}
+                  className="w-full p-2 border rounded"
+                  required
+                >
                   <option value="">Selecione</option>
                   {nomes
                     .filter(n => !nomesValidos.includes(n))
                     .map(nome => (
-                      <option key={nome}>{nome}</option>
+                      <option key={nome} value={nome}>{nome}</option>
                     ))}
                 </select>
               </div>
@@ -204,11 +209,16 @@ export default function Home() {
             <div className="flex gap-4">
               <div className="w-1/2">
                 <label className="font-medium">Vencedor</label>
-                <select name="vencedor" value={form.vencedor} onChange={e => setForm(f => ({ ...f, vencedor: e.target.value }))}
-                  className="w-full p-2 border rounded" required>
+                <select
+                  name="vencedor"
+                  value={form.vencedor}
+                  onChange={e => setForm(f => ({ ...f, vencedor: e.target.value }))}
+                  className="w-full p-2 border rounded"
+                  required
+                >
                   <option value="">Selecione</option>
                   {nomesValidos.map(n => (
-                    <option key={n}>{n}</option>
+                    <option key={n} value={n}>{n}</option>
                   ))}
                 </select>
               </div>
