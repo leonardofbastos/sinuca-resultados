@@ -31,6 +31,7 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [resultados, setResultados] = useState([]);
   const [partidas, setPartidas] = useState([]);
+  const [buscaPartida, setBuscaPartida] = useState("");
 
   useEffect(() => {
     buscarResultados();
@@ -121,6 +122,8 @@ export default function Home() {
     </div>
   );
 
+  const partidasFiltradas = partidas.filter(p => p.id_partida.toString().includes(buscaPartida));
+
   return (
     <div>
       <header className="bg-gray-800 text-white py-3 text-center text-xl font-bold">
@@ -141,10 +144,18 @@ export default function Home() {
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
+              <label className="block mb-1 font-medium">Buscar ID da Partida</label>
+              <input
+                type="text"
+                className="w-full p-2 border rounded mb-2"
+                placeholder="Digite o ID da partida"
+                value={buscaPartida}
+                onChange={(e) => setBuscaPartida(e.target.value)}
+              />
               <label className="block mb-1 font-medium">Partida</label>
               <select name="id_partida" value={form.id_partida} onChange={handleChange} className="w-full p-2 border rounded" required>
                 <option value="">Selecione a Partida</option>
-                {partidas.map((p) => (
+                {partidasFiltradas.map((p) => (
                   <option key={p.id_partida} value={p.id_partida}>
                     {p.id_partida} - {p.clubes_mandante?.descricao} x {p.clubes_visitante?.descricao} ({p.status_partida})
                   </option>
