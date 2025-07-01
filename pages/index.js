@@ -99,12 +99,11 @@ export default function Home() {
     }
 
     // Atualiza status da partida
-    const { error: updateError } = await supabase
+    const { data: updateData, error: updateError } = await supabase
       .from("tab_partida")
       .update({ status_partida: "LANÇADO" })
-      .eq("id_partida", objInsert.id_partida);
+      .eq("id_partida", Number(objInsert.id_partida));
 
-    console.log("ID da partida usado no update:", objInsert.id_partida);
     console.log("Resultado do UPDATE:", updateData);
     console.log("Erro do UPDATE:", updateError);
 
