@@ -70,39 +70,56 @@ export default function Home() {
       setMessage("Selecione uma partida válida");
       return;
     }
-
     setLoading(true);
     setMessage("");
 
-    const { error } = await supabase.from("tab_resultado_partida").insert({ ...form });
-    if (!error) {
-      const { error: updateError } = await supabase
-        .from("tab_partida")
-        .update({ status_partida: "LANÇADO" })
-        .eq("id_partida", form.id_partida);
+    const objInsert = {
+      id_partida: Number(form.id_partida),
+      arbitro: form.arbitro,
+      vencedor: form.vencedor,
+      placar_mandante: Number(form.placar_mandante) || 0,
+      placar_visitante: Number(form.placar_visitante) || 0,
+      felinos_mandante: Number(form.felinos_mandante) || 0,
+      felinos_visitante: Number(form.felinos_visitante) || 0,
+      penalidades_mandante: Number(form.penalidades_mandante) || 0,
+      penalidades_visitante: Number(form.penalidades_visitante) || 0,
+      sinucas_mandante: Number(form.sinucas_mandante) || 0,
+      sinucas_visitante: Number(form.sinucas_visitante) || 0,
+    };
 
-      if (updateError) {
-        setMessage("Erro ao atualizar status da partida.");
-      } else {
-        setMessage("Resultado salvo com sucesso!");
-        setForm({
-          id_partida: "",
-          arbitro: "",
-          vencedor: "",
-          placar_mandante: 0,
-          placar_visitante: 0,
-          felinos_mandante: 0,
-          felinos_visitante: 0,
-          penalidades_mandante: 0,
-          penalidades_visitante: 0,
-          sinucas_mandante: 0,
-          sinucas_visitante: 0
-        });
-        setSearchTerm("");
-        buscarPartidas();
-      }
+    const { error: insertError } = await supabase.from("tab_resultado_partida").insert(objInsert);
+
+    if (insertError) {
+      setMessage("Erro ao salvar resultado: " + insertError.message);
+      setLoading(false);
+      return;
+    }
+
+    // Atualiza status da partida
+    const { error: updateError } = await supabase
+      .from("tab_partida")
+      .update({ status_partida: "LANÇADO" })
+      .eq("id_partida", objInsert.id_partida);
+
+    if (updateError) {
+      setMessage("Erro ao atualizar status da partida: " + updateError.message);
     } else {
-      setMessage("Erro ao salvar resultado.");
+      setMessage("Resultado salvo e status atualizado com sucesso!");
+      setForm({
+        id_partida: "",
+        arbitro: "",
+        vencedor: "",
+        placar_mandante: 0,
+        placar_visitante: 0,
+        felinos_mandante: 0,
+        felinos_visitante: 0,
+        penalidades_mandante: 0,
+        penalidades_visitante: 0,
+        sinucas_mandante: 0,
+        sinucas_visitante: 0,
+      });
+      setSearchTerm("");
+      buscarPartidas();
     }
 
     setLoading(false);
