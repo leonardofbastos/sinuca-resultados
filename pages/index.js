@@ -1,3 +1,4 @@
+// index.js
 import { useEffect, useState, useRef } from "react";
 import { createClient } from "@supabase/supabase-js";
 
@@ -42,13 +43,12 @@ export default function Home() {
         setDropdownOpen(false);
       }
     }
-
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   const buscarPartidas = async () => {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("tab_partida")
       .select(`
         id_partida, rodada, status_partida,
@@ -56,14 +56,17 @@ export default function Home() {
         clubes_visitante:tab_clube!tab_partida_id_clube_visitante_fkey(descricao),
         resultado:tab_resultado_partida(id_partida, vencedor, placar_mandante, placar_visitante, felinos_mandante, felinos_visitante, penalidades_mandante, penalidades_visitante, sinucas_mandante, sinucas_visitante)
       `);
-    setPartidas(data || []);
+    if (error) {
+      console.error("Erro ao buscar partidas:", error);
+      setPartidas([]);
+    } else {
+      setPartidas(data || []);
+    }
   };
 
-  const alterarValor = (campo, incremento) => {
-    setForm(prev => ({
-      ...prev,
-      [campo]: Math.max(0, prev[campo] + incremento)
-    }));
+  const toggleMostrarTabela = () => {
+    if (!mostrarTabela) buscarPartidas();
+    setMostrarTabela(!mostrarTabela);
   };
 
   const handleSubmit = async (e) => {
@@ -72,11 +75,11 @@ export default function Home() {
       setMessage("Selecione uma partida válida");
       return;
     }
+
     setLoading(true);
     setMessage("");
 
     const { error } = await supabase.from("tab_resultado_partida").insert({ ...form });
-
     if (!error) {
       const { error: updateError } = await supabase
         .from("tab_partida")
@@ -86,7 +89,7 @@ export default function Home() {
       if (updateError) {
         setMessage("Erro ao atualizar status da partida.");
       } else {
-        setMessage("Resultado salvo com sucesso!");
+        setMessage("Resultado salvo!");
         setForm({
           id_partida: "",
           arbitro: "",
@@ -106,7 +109,6 @@ export default function Home() {
     } else {
       setMessage("Erro ao salvar resultado.");
     }
-
     setLoading(false);
   };
 
@@ -123,6 +125,13 @@ export default function Home() {
     if (partidaSelecionada.clubes_visitante?.descricao) nomesValidos.push(partidaSelecionada.clubes_visitante.descricao);
   }
 
+  const alterarValor = (campo, incremento) => {
+    setForm(prev => ({
+      ...prev,
+      [campo]: Math.max(0, prev[campo] + incremento)
+    }));
+  };
+
   return (
     <div style={{ fontFamily: "Helvetica, sans-serif" }}>
       <header className="bg-gray-800 text-white py-3 text-center text-xl font-bold">
@@ -133,7 +142,7 @@ export default function Home() {
         <div className="flex justify-between items-center mb-4">
           <h1 className="text-3xl font-bold">Lançar Resultado</h1>
           <button
-            onClick={() => setMostrarTabela(!mostrarTabela)}
+            onClick={toggleMostrarTabela}
             className="bg-gray-800 text-white px-4 py-2 rounded hover:bg-gray-700"
           >
             {mostrarTabela ? "Voltar" : "Ver Partidas"}
@@ -157,6 +166,13 @@ export default function Home() {
                 </tr>
               </thead>
               <tbody>
+                {partidas.length === 0 && (
+                  <tr>
+                    <td colSpan={9} className="text-center py-4 text-gray-500">
+                      Nenhuma partida encontrada.
+                    </td>
+                  </tr>
+                )}
                 {partidas.map(p => (
                   <tr key={p.id_partida} className="border-t">
                     <td>{p.rodada}</td>
@@ -166,23 +182,27 @@ export default function Home() {
                     </td>
                     <td>{p.clubes_mandante?.descricao}</td>
                     <td>{p.clubes_visitante?.descricao}</td>
-                    <td>{p.resultado?.placar_mandante ?? 0} x {p.resultado?.placar_visitante ?? 0}</td>
-                    <td>{p.resultado?.felinos_mandante ?? 0} x {p.resultado?.felinos_visitante ?? 0}</td>
-                    <td>{p.resultado?.penalidades_mandante ?? 0} x {p.resultado?.penalidades_visitante ?? 0}</td>
-                    <td>{p.resultado?.sinucas_mandante ?? 0} x {p.resultado?.sinucas_visitante ?? 0}</td>
+                    <td>{p.resultado?.placar_mandante} x {p.resultado?.placar_visitante}</td>
+                    <td>{p.resultado?.felinos_mandante} x {p.resultado?.felinos_visitante}</td>
+                    <td>{p.resultado?.penalidades_mandante} x {p.resultado?.penalidades_visitante}</td>
+                    <td>{p.resultado?.sinucas_mandante} x {p.resultado?.sinucas_visitante}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="space-y-6" ref={wrapperRef}>
+          <form onSubmit={handleSubmit} className="space-y-6" ref={wrapperRef} autoComplete="off">
             <div className="flex gap-4">
               <div className="w-1/2 relative">
                 <label className="font-medium">Partida</label>
                 <input
                   value={searchTerm}
-                  onChange={e => { setSearchTerm(e.target.value); setDropdownOpen(true); }}
+                  onChange={e => {
+                    setSearchTerm(e.target.value);
+                    setDropdownOpen(true);
+                    setMessage("");
+                  }}
                   onFocus={() => setDropdownOpen(true)}
                   className="w-full p-2 border rounded"
                   placeholder="Rodada ou Clube..."
@@ -207,8 +227,12 @@ export default function Home() {
                     ))}
                   </ul>
                 )}
+                {dropdownOpen && partidasFiltradas.length === 0 && (
+                  <div className="absolute z-10 bg-white border w-full p-2 mt-1 rounded shadow text-gray-500">
+                    Nenhuma partida encontrada.
+                  </div>
+                )}
               </div>
-
               <div className="w-1/2">
                 <label className="font-medium">Árbitro</label>
                 <select
@@ -219,14 +243,15 @@ export default function Home() {
                   required
                 >
                   <option value="">Selecione</option>
-                  {nomes.filter(n => !nomesValidos.includes(n)).map(nome => (
-                    <option key={nome} value={nome}>{nome}</option>
-                  ))}
+                  {nomes
+                    .filter(n => !nomesValidos.includes(n))
+                    .map(nome => (
+                      <option key={nome} value={nome}>{nome}</option>
+                    ))}
                 </select>
               </div>
             </div>
 
-            {/* Contadores */}
             {["Placar", "Felinos", "Penalidades", "Sinucas"].map((titulo, idx) => (
               <div key={idx} className="border rounded-lg p-4 bg-blue-50 mb-4">
                 <h3 className="text-xl font-bold text-blue-800 text-center mb-4">{titulo}</h3>
@@ -234,27 +259,15 @@ export default function Home() {
                   {[0, 1].map(i => {
                     const campo = `${titulo.toLowerCase()}_${i === 0 ? "mandante" : "visitante"}`;
                     const nome = i === 0
-                      ? `${partidaSelecionada?.clubes_mandante?.descricao || "Mandante"} (Mandante)`
-                      : `${partidaSelecionada?.clubes_visitante?.descricao || "Visitante"} (Visitante)`;
+                      ? partidaSelecionada?.clubes_mandante?.descricao || "Mandante"
+                      : partidaSelecionada?.clubes_visitante?.descricao || "Visitante";
                     return (
                       <div key={campo} className="flex flex-col items-center">
                         <label className="text-blue-700 font-semibold mb-1">{nome}</label>
                         <div className="flex items-center gap-2">
-                          <button
-                            className="px-3 py-1 text-white bg-red-500 rounded text-lg"
-                            type="button"
-                            onClick={() => alterarValor(campo, -1)}
-                          >
-                            -
-                          </button>
-                          <span className="w-8 text-center">{form[campo]}</span>
-                          <button
-                            className="px-3 py-1 text-white bg-green-600 rounded text-lg"
-                            type="button"
-                            onClick={() => alterarValor(campo, 1)}
-                          >
-                            +
-                          </button>
+                          <button className="px-3 py-1 text-white bg-red-500 rounded" type="button" onClick={() => alterarValor(campo, -1)}>-</button>
+                          <span>{form[campo]}</span>
+                          <button className="px-3 py-1 text-white bg-green-600 rounded" type="button" onClick={() => alterarValor(campo, 1)}>+</button>
                         </div>
                       </div>
                     );
@@ -280,11 +293,7 @@ export default function Home() {
                 </select>
               </div>
               <div className="w-1/2 flex items-end">
-                <button
-                  className="bg-blue-600 text-white px-6 py-2 rounded w-full"
-                  type="submit"
-                  disabled={loading}
-                >
+                <button className="bg-blue-600 text-white px-6 py-2 rounded w-full" type="submit" disabled={loading}>
                   {loading ? "Salvando..." : "Salvar Resultado"}
                 </button>
               </div>
