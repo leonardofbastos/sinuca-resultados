@@ -219,28 +219,66 @@ export default function Home() {
         </div>
 
         {mostrarTabela ? (
+          // <div className="overflow-auto border rounded p-4">
+          //   <table className="w-full text-sm text-left">
+          //     <thead className="bg-gray-200">
+          //       <tr>
+          //         <th>Rodada</th><th>ID</th><th>Status</th><th>Mandante</th><th>Visitante</th>
+          //         <th>Placar</th><th>Felinos</th><th>Penalidades</th><th>Sinucas</th>
+          //       </tr>
+          //     </thead>
+          //     <tbody>
+          //       {partidas.map(p => (
+          //         <tr key={p.id_partida} className="border-t">
+          //           <td>{p.rodada}</td>
+          //           <td>{p.id_partida}</td>
+          //           <td className={`font-bold ${p.status_partida === 'LANÇADA' ? 'text-green-600' : 'text-blue-600'}`}>
+          //             {p.status_partida}
+          //           </td>
+          //           <td>{p.clubes_mandante?.descricao}</td>
+          //           <td>{p.clubes_visitante?.descricao}</td>
+          //           <td>{p.resultado?.placar_mandante ?? 0} x {p.resultado?.placar_visitante ?? 0}</td>
+          //           <td>{p.resultado?.felinos_mandante ?? 0} x {p.resultado?.felinos_visitante ?? 0}</td>
+          //           <td>{p.resultado?.penalidades_mandante ?? 0} x {p.resultado?.penalidades_visitante ?? 0}</td>
+          //           <td>{p.resultado?.sinucas_mandante ?? 0} x {p.resultado?.sinucas_visitante ?? 0}</td>
+          //         </tr>
+          //       ))}
+          //     </tbody>
+          //   </table>
+          // </div>
           <div className="overflow-auto border rounded p-4">
             <table className="w-full text-sm text-left">
               <thead className="bg-gray-200">
                 <tr>
-                  <th>Rodada</th><th>ID</th><th>Status</th><th>Mandante</th><th>Visitante</th>
-                  <th>Placar</th><th>Felinos</th><th>Penalidades</th><th>Sinucas</th>
+                  <th>Rodada</th>
+                  <th>ID</th>
+                  <th>Status</th>
+                  <th>Mandante</th>
+                  <th>Visitante</th>
+                  <th><strong>Placar</strong></th>
+                  <th><strong>Vencedor</strong></th>
+                  <th>Felinos</th>
+                  <th>Penalidades</th>
+                  <th>Sinucas</th>
+                  <th>Árbitro</th>
                 </tr>
               </thead>
               <tbody>
-                {partidas.map(p => (
-                  <tr key={p.id_partida} className="border-t">
-                    <td>{p.rodada}</td>
+                {partidas.map((p, i) => (
+                  <tr key={i} className="border-t">
+                    <td>{p.tab_partida?.rodada}</td>
                     <td>{p.id_partida}</td>
-                    <td className={`font-bold ${p.status_partida === 'LANÇADA' ? 'text-green-600' : 'text-blue-600'}`}>
-                      {p.status_partida}
+                    <td className={`font-bold ${p.tab_partida?.status_partida === 'LANÇADA' ? 'text-green-600' : 'text-blue-600'}`}>
+                      {p.tab_partida?.status_partida}
                     </td>
-                    <td>{p.clubes_mandante?.descricao}</td>
-                    <td>{p.clubes_visitante?.descricao}</td>
-                    <td>{p.resultado?.placar_mandante ?? 0} x {p.resultado?.placar_visitante ?? 0}</td>
-                    <td>{p.resultado?.felinos_mandante ?? 0} x {p.resultado?.felinos_visitante ?? 0}</td>
-                    <td>{p.resultado?.penalidades_mandante ?? 0} x {p.resultado?.penalidades_visitante ?? 0}</td>
-                    <td>{p.resultado?.sinucas_mandante ?? 0} x {p.resultado?.sinucas_visitante ?? 0}</td>
+                    <td>{p.tab_partida?.clubes_mandante?.descricao}</td>
+                    <td>{p.tab_partida?.clubes_visitante?.descricao}</td>
+                    <td><strong>{p.placar_mandante} x {p.placar_visitante}</strong></td>
+                    <td><strong>{p.vencedor}</strong></td>
+                    <td>{p.felinos_mandante} x {p.felinos_visitante}</td>
+                    <td>{p.penalidades_mandante} x {p.penalidades_visitante}</td>
+                    <td>{p.sinucas_mandante} x {p.sinucas_visitante}</td>
+                    <td>{p.arbitro}</td>
                   </tr>
                 ))}
               </tbody>
