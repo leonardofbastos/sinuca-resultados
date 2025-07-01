@@ -32,7 +32,7 @@ export default function Home() {
   const [searchTerm, setSearchTerm] = useState("");
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [mostrarTabela, setMostrarTabela] = useState(false);
-  const [idSelecionado, setIdSelecionado] = useState(""); // <-- Guarda o id_partida selecionado explicitamente
+  const [idSelecionado, setIdSelecionado] = useState("");
   const wrapperRef = useRef(null);
 
   useEffect(() => {
@@ -46,24 +46,6 @@ export default function Home() {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
-
-  // const buscarPartidas = async () => {
-  //   const { data, error } = await supabase
-  //     .from("tab_partida")
-  //     .select(`
-  //       id_partida,
-  //       rodada,
-  //       status_partida,
-  //       clubes_mandante:tab_clube!id_clube_mandante(descricao),
-  //       clubes_visitante:tab_clube!id_clube_visitante(descricao)
-  //     `);
-
-  //   if (error) {
-  //     console.error("Erro ao buscar partidas:", error);
-  //   } else {
-  //     setPartidas(data);
-  //   }
-  // };
 
   const buscarPartidas = async () => {
     const { data, error } = await supabase
@@ -94,20 +76,16 @@ export default function Home() {
 
     if (error) {
       console.error("Erro ao buscar partidas:", error);
-    } else {
-      // Para duplicar as linhas com múltiplos resultados
-      const partidasComResultados = data.flatMap(partida => {
-        if (!partida.resultados || partida.resultados.length === 0) {
-          return [{ ...partida, resultado: null }];
-        }
-        return partida.resultados.map(r => ({
-          ...partida,
-          resultado: r
-        }));
-      });
-
-      setPartidas(partidasComResultados);
+      return;
     }
+
+    data.forEach(partida => {
+      if (partida.resultados) {
+        partida.resultados.sort((a, b) => new Date(a.data_criacao) - new Date(b.data_criacao));
+      }
+    });
+
+    setPartidas(data);
   };
 
   const handleSubmit = async (e) => {
@@ -133,7 +111,6 @@ export default function Home() {
       sinucas_visitante: Number(form.sinucas_visitante) || 0,
     };
 
-    // Inserir resultado
     const { error: insertError } = await supabase.from("tab_resultado_partida").insert(objInsert);
     if (insertError) {
       setMessage("Erro ao salvar resultado: " + insertError.message);
@@ -141,11 +118,10 @@ export default function Home() {
       return;
     }
 
-    // Atualizar status da partida usando idSelecionado como string
     const { error: updateError } = await supabase
       .from("tab_partida")
       .update({ status_partida: "LANÇADA" })
-      .eq("id_partida", String(idSelecionado));  // <-- Aqui o ajuste importante!
+      .eq("id_partida", String(idSelecionado));
 
     if (updateError) {
       setMessage("Erro ao atualizar status da partida: " + updateError.message);
@@ -174,24 +150,20 @@ export default function Home() {
     setLoading(false);
   };
 
-  // Filtro para dropdown de partidas
   const partidasFiltradas = partidas.filter(p => {
     if (!searchTerm.trim()) return true;
     const texto = `${p.rodada ?? ''} ${p.id_partida ?? ''} ${p.clubes_mandante?.descricao ?? ''} ${p.clubes_visitante?.descricao ?? ''}`.toLowerCase();
     return texto.includes(searchTerm.toLowerCase());
   });
 
-  // Encontra partida selecionada pelo idSelecionado (que é número/string coerente)
   const partidaSelecionada = partidas.find(p => p.id_partida === Number(idSelecionado));
 
-  // Para filtro de nomes já usados na partida
   const nomesValidos = [];
   if (partidaSelecionada) {
     if (partidaSelecionada.clubes_mandante?.descricao) nomesValidos.push(partidaSelecionada.clubes_mandante.descricao);
     if (partidaSelecionada.clubes_visitante?.descricao) nomesValidos.push(partidaSelecionada.clubes_visitante.descricao);
   }
 
-  // Incrementa/decrementa os valores no form
   const alterarValor = (campo, incremento) => {
     setForm(prev => ({
       ...prev,
@@ -219,33 +191,6 @@ export default function Home() {
         </div>
 
         {mostrarTabela ? (
-          // <div className="overflow-auto border rounded p-4">
-          //   <table className="w-full text-sm text-left">
-          //     <thead className="bg-gray-200">
-          //       <tr>
-          //         <th>Rodada</th><th>ID</th><th>Status</th><th>Mandante</th><th>Visitante</th>
-          //         <th>Placar</th><th>Felinos</th><th>Penalidades</th><th>Sinucas</th>
-          //       </tr>
-          //     </thead>
-          //     <tbody>
-          //       {partidas.map(p => (
-          //         <tr key={p.id_partida} className="border-t">
-          //           <td>{p.rodada}</td>
-          //           <td>{p.id_partida}</td>
-          //           <td className={`font-bold ${p.status_partida === 'LANÇADA' ? 'text-green-600' : 'text-blue-600'}`}>
-          //             {p.status_partida}
-          //           </td>
-          //           <td>{p.clubes_mandante?.descricao}</td>
-          //           <td>{p.clubes_visitante?.descricao}</td>
-          //           <td>{p.resultado?.placar_mandante ?? 0} x {p.resultado?.placar_visitante ?? 0}</td>
-          //           <td>{p.resultado?.felinos_mandante ?? 0} x {p.resultado?.felinos_visitante ?? 0}</td>
-          //           <td>{p.resultado?.penalidades_mandante ?? 0} x {p.resultado?.penalidades_visitante ?? 0}</td>
-          //           <td>{p.resultado?.sinucas_mandante ?? 0} x {p.resultado?.sinucas_visitante ?? 0}</td>
-          //         </tr>
-          //       ))}
-          //     </tbody>
-          //   </table>
-          // </div>
           <div className="overflow-auto border rounded p-4">
             <table className="w-full text-sm text-left">
               <thead className="bg-gray-200">
@@ -255,8 +200,8 @@ export default function Home() {
                   <th>Status</th>
                   <th>Mandante</th>
                   <th>Visitante</th>
-                  <th><strong>Placar</strong></th>
-                  <th><strong>Vencedor</strong></th>
+                  <th>Placar</th>
+                  <th>Vencedor</th>
                   <th>Felinos</th>
                   <th>Penalidades</th>
                   <th>Sinucas</th>
@@ -264,22 +209,47 @@ export default function Home() {
                 </tr>
               </thead>
               <tbody>
-                {partidas.map((p, i) => (
-                  <tr key={i} className="border-t">
-                    <td>{p.tab_partida?.rodada}</td>
-                    <td>{p.id_partida}</td>
-                    <td className={`font-bold ${p.tab_partida?.status_partida === 'LANÇADA' ? 'text-green-600' : 'text-blue-600'}`}>
-                      {p.tab_partida?.status_partida}
-                    </td>
-                    <td>{p.tab_partida?.clubes_mandante?.descricao}</td>
-                    <td>{p.tab_partida?.clubes_visitante?.descricao}</td>
-                    <td><strong>{p.placar_mandante} x {p.placar_visitante}</strong></td>
-                    <td><strong>{p.vencedor}</strong></td>
-                    <td>{p.felinos_mandante} x {p.felinos_visitante}</td>
-                    <td>{p.penalidades_mandante} x {p.penalidades_visitante}</td>
-                    <td>{p.sinucas_mandante} x {p.sinucas_visitante}</td>
-                    <td>{p.arbitro}</td>
-                  </tr>
+                {partidas.map(partida => (
+                  partida.resultados && partida.resultados.length > 0 ? (
+                    partida.resultados.map((resultado, idx) => (
+                      <tr key={`${partida.id_partida}-${idx}`} className="border-t">
+                        <td>{partida.rodada}</td>
+                        <td>{partida.id_partida}</td>
+                        <td className={`font-bold ${partida.status_partida === 'LANÇADA' ? 'text-green-600' : 'text-blue-600'}`}>
+                          {partida.status_partida}
+                        </td>
+                        <td>{partida.clubes_mandante?.descricao}</td>
+                        <td>{partida.clubes_visitante?.descricao}</td>
+                        <td className="font-bold">
+                          {resultado.placar_mandante ?? 0} x {resultado.placar_visitante ?? 0}
+                        </td>
+                        <td className="font-bold">{resultado.vencedor}</td>
+                        <td>
+                          {resultado.felinos_mandante ?? 0} x {resultado.felinos_visitante ?? 0}
+                        </td>
+                        <td>
+                          {resultado.penalidades_mandante ?? 0} x {resultado.penalidades_visitante ?? 0}
+                        </td>
+                        <td>
+                          {resultado.sinucas_mandante ?? 0} x {resultado.sinucas_visitante ?? 0}
+                        </td>
+                        <td>{resultado.arbitro}</td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr key={partida.id_partida} className="border-t">
+                      <td>{partida.rodada}</td>
+                      <td>{partida.id_partida}</td>
+                      <td className={`font-bold ${partida.status_partida === 'LANÇADA' ? 'text-green-600' : 'text-blue-600'}`}>
+                        {partida.status_partida}
+                      </td>
+                      <td>{partida.clubes_mandante?.descricao}</td>
+                      <td>{partida.clubes_visitante?.descricao}</td>
+                      <td colSpan={6} className="text-center italic text-gray-500">
+                        Nenhum resultado lançado
+                      </td>
+                    </tr>
+                  )
                 ))}
               </tbody>
             </table>
@@ -294,7 +264,7 @@ export default function Home() {
                   onChange={e => {
                     setSearchTerm(e.target.value);
                     setDropdownOpen(true);
-                    setIdSelecionado(""); // limpa ao digitar novo texto
+                    setIdSelecionado("");
                     setForm(f => ({ ...f, id_partida: "" }));
                   }}
                   onFocus={() => setDropdownOpen(true)}
@@ -312,7 +282,7 @@ export default function Home() {
                         onClick={() => {
                           setForm(f => ({ ...f, id_partida: p.id_partida }));
                           setSearchTerm(`Rodada ${p.rodada} - ${p.id_partida} - ${p.clubes_mandante?.descricao} x ${p.clubes_visitante?.descricao}`);
-                          setIdSelecionado(String(p.id_partida)); // <-- salva ID selecionado aqui
+                          setIdSelecionado(String(p.id_partida));
                           setDropdownOpen(false);
                         }}
                       >
