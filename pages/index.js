@@ -271,7 +271,7 @@ export default function Home() {
                   }}
                   onFocus={() => setDropdownOpen(true)}
                   className="w-full p-2 border rounded"
-                  placeholder="Rodada ou Clube..."
+                  placeholder="Buscar Partida..."
                   autoComplete="off"
                   required
                 />
@@ -283,7 +283,7 @@ export default function Home() {
                         className="p-2 hover:bg-gray-200 cursor-pointer"
                         onClick={() => {
                           setForm(f => ({ ...f, id_partida: p.id_partida }));
-                          setSearchTerm(`Rodada ${p.rodada} - ${p.id_partida} - ${p.clubes_mandante?.descricao} x ${p.clubes_visitante?.descricao}`);
+                          setSearchTerm(`Rodada ${p.rodada} - Partida ${p.id_partida} - ${p.clubes_mandante?.descricao} x ${p.clubes_visitante?.descricao}`);
                           setIdSelecionado(String(p.id_partida));
                           setDropdownOpen(false);
                         }}
