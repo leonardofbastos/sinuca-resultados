@@ -85,7 +85,8 @@ export default function Home() {
           sinucas_mandante,
           sinucas_visitante
         )
-      `);
+      `)
+      .order("id_partida", { ascending: false });
 
     if (error) {
       console.error("Erro ao buscar partidas:", error);
