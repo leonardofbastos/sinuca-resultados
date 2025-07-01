@@ -56,11 +56,13 @@ export default function Home() {
         clubes_visitante:tab_clube!tab_partida_id_clube_visitante_fkey(descricao),
         resultado:tab_resultado_partida(id_partida, vencedor, placar_mandante, placar_visitante, felinos_mandante, felinos_visitante, penalidades_mandante, penalidades_visitante, sinucas_mandante, sinucas_visitante)
       `);
+
     if (error) {
       console.error("Erro ao buscar partidas:", error);
       setPartidas([]);
     } else {
       setPartidas(data || []);
+      console.log("Dados partidas carregados:", data);
     }
   };
 
@@ -113,9 +115,14 @@ export default function Home() {
   };
 
   const partidasFiltradas = partidas.filter(p => {
-    const texto = `${p.rodada} ${p.id_partida} ${p.clubes_mandante?.descricao} ${p.clubes_visitante?.descricao}`.toLowerCase();
+    if (!searchTerm.trim()) return true;
+    const texto = `${p.rodada ?? ''} ${p.id_partida ?? ''} ${p.clubes_mandante?.descricao ?? ''} ${p.clubes_visitante?.descricao ?? ''}`.toLowerCase();
     return texto.includes(searchTerm.toLowerCase());
   });
+
+  console.log('partidas:', partidas);
+  console.log('searchTerm:', searchTerm);
+  console.log('partidasFiltradas:', partidasFiltradas);
 
   const partidaSelecionada = partidas.find(p => p.id_partida === form.id_partida);
 
