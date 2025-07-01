@@ -86,7 +86,7 @@ export default function Home() {
           sinucas_visitante
         )
       `)
-      .order("tab_partida.rodada", { ascending: false })
+      .order("tab_partida.rodada", { ascending: true })
       .order("tab_partida.id_partida", { ascending: true })
       .order("tab_resultado_partida.data_criacao", { ascending: false });
 
