@@ -83,7 +83,12 @@ export default function Home() {
   });
 
   const partidaSelecionada = partidas.find(p => p.id_partida === form.id_partida);
-  const nomesValidos = [partidaSelecionada?.clubes_mandante?.descricao, partidaSelecionada?.clubes_visitante?.descricao];
+  // const nomesValidos = [partidaSelecionada?.clubes_mandante?.descricao, partidaSelecionada?.clubes_visitante?.descricao];
+  const nomesValidos = [];
+  if (partidaSelecionada) {
+    if (partidaSelecionada.clubes_mandante?.descricao) nomesValidos.push(partidaSelecionada.clubes_mandante.descricao);
+    if (partidaSelecionada.clubes_visitante?.descricao) nomesValidos.push(partidaSelecionada.clubes_visitante.descricao);
+  }
 
   return (
     <div style={{ fontFamily: "Helvetica, sans-serif" }}>
