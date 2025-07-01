@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 
 const supabase = createClient(
@@ -6,6 +6,7 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 );
 
+// Juízes (nomes que não podem ser clubes)
 const nomes = [
   "Leonardo", "Douglas", "Sandro", "Vagner", "João",
   "Luis", "Pedro", "Iuri", "Gustavo", "Erick"
@@ -30,22 +31,11 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [resultados, setResultados] = useState([]);
   const [partidas, setPartidas] = useState([]);
-
-  const [searchTerm, setSearchTerm] = useState("");
-  const [dropdownOpen, setDropdownOpen] = useState(false);
-  const wrapperRef = useRef(null);
+  const [filtroPartida, setFiltroPartida] = useState("");
 
   useEffect(() => {
     buscarResultados();
     buscarPartidas();
-
-    function handleClickOutside(event) {
-      if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
-        setDropdownOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   const buscarResultados = async () => {
@@ -61,54 +51,36 @@ export default function Home() {
   const buscarPartidas = async () => {
     const { data, error } = await supabase
       .from("tab_partida")
-      .select(`id_partida, rodada, status_partida, 
-        clubes_mandante:tab_clube!tab_partida_id_clube_mandante_fkey(descricao), 
-        clubes_visitante:tab_clube!tab_partida_id_clube_visitante_fkey(descricao)`);
+      .select(`id_partida, rodada, status_partida, clubes_mandante:tab_clube!tab_partida_id_clube_mandante_fkey(descricao), clubes_visitante:tab_clube!tab_partida_id_clube_visitante_fkey(descricao)`);
 
     if (!error) setPartidas(data);
   };
 
-  const handleInputChange = (e) => {
-    setSearchTerm(e.target.value);
-    setDropdownOpen(true);
-  };
+  const handleChange = (e) => {
+    const { name, value } = e.target;
 
-  const selecionarPartida = (p) => {
-    setForm(prev => ({
-      ...prev,
-      id_partida: p.id_partida,
-      placar_mandante: 0,
-      placar_visitante: 0,
-      felinos_mandante: 0,
-      felinos_visitante: 0,
-      penalidades_mandante: 0,
-      penalidades_visitante: 0,
-      sinucas_mandante: 0,
-      sinucas_visitante: 0,
-      vencedor: "",
-    }));
-    setSearchTerm(`Rodada ${p.rodada} - ${p.id_partida} - ${p.clubes_mandante?.descricao} x ${p.clubes_visitante?.descricao} (${p.status_partida})`);
-    setDropdownOpen(false);
+    // Limpar vencedor se mudar partida
+    if (name === "id_partida") {
+      setForm((prev) => ({
+        ...prev,
+        [name]: value,
+        vencedor: "",
+        juiz: "", // limpa juiz também para evitar erro
+      }));
+    } else {
+      setForm((prev) => ({ ...prev, [name]: value }));
+    }
   };
 
   const alterarValor = (campo, incremento) => {
-    setForm(prev => ({
+    setForm((prev) => ({
       ...prev,
       [campo]: Math.max(0, prev[campo] + incremento)
     }));
   };
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setForm(prev => ({ ...prev, [name]: value }));
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.id_partida) {
-      setMessage("Selecione uma partida válida");
-      return;
-    }
     setLoading(true);
     setMessage("");
 
@@ -134,7 +106,6 @@ export default function Home() {
         sinucas_mandante: 0,
         sinucas_visitante: 0
       });
-      setSearchTerm("");
       buscarResultados();
       buscarPartidas();
     } else {
@@ -144,49 +115,27 @@ export default function Home() {
     setLoading(false);
   };
 
-  const CampoContador = ({ titulo, campoMandante, campoVisitante }) => {
-    const partidaSelecionada = partidas.find(p => p.id_partida === form.id_partida);
-    const mandanteNome = partidaSelecionada?.clubes_mandante?.descricao || "Mandante";
-    const visitanteNome = partidaSelecionada?.clubes_visitante?.descricao || "Visitante";
-
-    return (
-      <div className="border rounded-lg p-4 mb-4 bg-blue-50">
-        <h3 className="text-xl font-bold mb-4 text-center text-blue-800">{titulo}</h3>
-        <div className="grid grid-cols-2 gap-4 text-center">
-          {[campoMandante, campoVisitante].map((campo, idx) => (
-            <div key={campo} className="flex flex-col items-center">
-              <label className="mb-1 font-semibold text-blue-700">{idx === 0 ? mandanteNome : visitanteNome}</label>
-              <div className="flex items-center gap-2 justify-center">
-                <button
-                  type="button"
-                  className="px-2 py-1 bg-red-500 text-white rounded"
-                  onClick={() => alterarValor(campo, -1)}
-                >
-                  -
-                </button>
-                <span className="w-8 text-center">{form[campo]}</span>
-                <button
-                  type="button"
-                  className="px-2 py-1 bg-green-600 text-white rounded"
-                  onClick={() => alterarValor(campo, 1)}
-                >
-                  +
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  };
-
-  const partidasFiltradas = partidas.filter(p => {
-    const texto = `${p.rodada} ${p.id_partida} ${p.clubes_mandante?.descricao} ${p.clubes_visitante?.descricao} ${p.status_partida}`.toLowerCase();
-    return texto.includes(searchTerm.toLowerCase());
+  // Filtra partidas conforme texto digitado no filtroPartida
+  const partidasFiltradas = partidas.filter((p) => {
+    const textoBusca = filtroPartida.toLowerCase();
+    const label = `${p.id_partida} Rodada ${p.rodada} - ${p.clubes_mandante?.descricao} x ${p.clubes_visitante?.descricao}`.toLowerCase();
+    return label.includes(textoBusca);
   });
 
+  // Pega partida selecionada para mostrar mandante e visitante nos labels
+  const partidaSelecionada = partidas.find((p) => p.id_partida.toString() === form.id_partida);
+
+  // Nomes do mandante e visitante para os labels e para validar vencedor
+  const nomeMandante = partidaSelecionada?.clubes_mandante?.descricao || "";
+  const nomeVisitante = partidaSelecionada?.clubes_visitante?.descricao || "";
+
+  // Juízes válidos: somente nomes que não sejam os clubes envolvidos
+  const juizesValidos = nomes.filter(
+    (nome) => nome !== nomeMandante && nome !== nomeVisitante
+  );
+
   return (
-    <div>
+    <div style={{ fontFamily: "Helvetica, Arial, sans-serif" }}>
       <header className="bg-gray-800 text-white py-3 text-center text-xl font-bold">
         F.O.S.S.A. - Federação Organizada de Sinuca e Sports Alternativos
       </header>
@@ -202,66 +151,194 @@ export default function Home() {
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6" autoComplete="off" ref={wrapperRef}>
-          <div className="flex gap-4 mb-6">
-            <div className="w-1/2 relative">
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="flex gap-4 mb-4">
+            <div className="w-1/2">
               <label className="block mb-1 font-medium">Partida</label>
               <input
                 type="text"
-                name="id_partida"
-                value={searchTerm}
-                onChange={handleInputChange}
-                onFocus={() => setDropdownOpen(true)}
-                placeholder="Digite o número ou parte da partida"
+                placeholder="Buscar partida pelo ID, rodada ou clube..."
+                value={filtroPartida}
+                onChange={(e) => setFiltroPartida(e.target.value)}
                 className="w-full p-2 border rounded"
-                autoComplete="off"
-                required
+                list="partidas-list"
               />
-              {dropdownOpen && partidasFiltradas.length > 0 && (
-                <ul className="absolute z-10 bg-white border max-h-48 overflow-auto w-full mt-1 rounded shadow-lg">
-                  {partidasFiltradas.map(p => (
-                    <li
-                      key={p.id_partida}
-                      onClick={() => selecionarPartida(p)}
-                      className="p-2 cursor-pointer hover:bg-gray-200"
-                    >
-                      Rodada {p.rodada} - {p.id_partida} - {p.clubes_mandante?.descricao} x {p.clubes_visitante?.descricao} ({p.status_partida})
-                    </li>
-                  ))}
-                </ul>
-              )}
+              <datalist id="partidas-list">
+                {partidasFiltradas.map((p) => (
+                  <option
+                    key={p.id_partida}
+                    value={p.id_partida}
+                  >
+                    {p.id_partida} Rodada {p.rodada} - {p.clubes_mandante?.descricao} x {p.clubes_visitante?.descricao} ({p.status_partida})
+                  </option>
+                ))}
+              </datalist>
             </div>
 
             <div className="w-1/2">
               <label className="block mb-1 font-medium">Juiz</label>
-              <select name="juiz" value={form.juiz} onChange={handleChange} className="w-full p-2 border rounded" required>
+              <select
+                name="juiz"
+                value={form.juiz}
+                onChange={handleChange}
+                className="w-full p-2 border rounded"
+                required
+              >
                 <option value="">Selecione o Juiz</option>
-                {nomes.map((nome) => (
+                {juizesValidos.map((nome) => (
                   <option key={nome} value={nome}>{nome}</option>
                 ))}
               </select>
             </div>
           </div>
 
-          <CampoContador titulo="Placar" campoMandante="placar_mandante" campoVisitante="placar_visitante" />
-          <CampoContador titulo="Penalidades" campoMandante="penalidades_mandante" campoVisitante="penalidades_visitante" />
-          <CampoContador titulo="Felinos" campoMandante="felinos_mandante" campoVisitante="felinos_visitante" />
-          <CampoContador titulo="Sinucas" campoMandante="sinucas_mandante" campoVisitante="sinucas_visitante" />
+          {/* Placar em card azul */}
+          <div className="border rounded-lg p-4 mb-4 bg-blue-50">
+            <h3 className="text-2xl font-bold mb-4 text-center text-blue-700">Placar</h3>
+            <div className="grid grid-cols-2 gap-4 text-center">
+              {[{
+                campo: "placar_mandante",
+                label: `${nomeMandante} (Mandante)`,
+              },{
+                campo: "placar_visitante",
+                label: `${nomeVisitante} (Visitante)`
+              }].map(({ campo, label }) => (
+                <div key={campo} className="flex flex-col items-center">
+                  <label className="mb-1 font-medium">{label}</label>
+                  <div className="flex items-center gap-3 justify-center">
+                    <button
+                      type="button"
+                      className="px-3 py-2 text-lg bg-red-500 text-white rounded"
+                      onClick={() => alterarValor(campo, -1)}
+                    >-</button>
+                    <span className="w-10 text-center text-lg">{form[campo]}</span>
+                    <button
+                      type="button"
+                      className="px-3 py-2 text-lg bg-green-600 text-white rounded"
+                      onClick={() => alterarValor(campo, 1)}
+                    >+</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
 
-          <div className="flex items-end gap-4">
-            <div className="flex-grow">
+          {/* Penalidades */}
+          <div className="border rounded-lg p-4 mb-4 bg-blue-50">
+            <h3 className="text-xl font-semibold mb-4 text-center text-blue-700">Penalidades</h3>
+            <div className="grid grid-cols-2 gap-4 text-center">
+              {[{
+                campo: "penalidades_mandante",
+                label: `${nomeMandante} (Mandante)`,
+              },{
+                campo: "penalidades_visitante",
+                label: `${nomeVisitante} (Visitante)`
+              }].map(({ campo, label }) => (
+                <div key={campo} className="flex flex-col items-center">
+                  <label className="mb-1 font-medium">{label}</label>
+                  <div className="flex items-center gap-3 justify-center">
+                    <button
+                      type="button"
+                      className="px-3 py-2 text-lg bg-red-500 text-white rounded"
+                      onClick={() => alterarValor(campo, -1)}
+                    >-</button>
+                    <span className="w-10 text-center text-lg">{form[campo]}</span>
+                    <button
+                      type="button"
+                      className="px-3 py-2 text-lg bg-green-600 text-white rounded"
+                      onClick={() => alterarValor(campo, 1)}
+                    >+</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Felinos */}
+          <div className="border rounded-lg p-4 mb-4 bg-blue-50">
+            <h3 className="text-xl font-semibold mb-4 text-center text-blue-700">Felinos</h3>
+            <div className="grid grid-cols-2 gap-4 text-center">
+              {[{
+                campo: "felinos_mandante",
+                label: `${nomeMandante} (Mandante)`,
+              },{
+                campo: "felinos_visitante",
+                label: `${nomeVisitante} (Visitante)`
+              }].map(({ campo, label }) => (
+                <div key={campo} className="flex flex-col items-center">
+                  <label className="mb-1 font-medium">{label}</label>
+                  <div className="flex items-center gap-3 justify-center">
+                    <button
+                      type="button"
+                      className="px-3 py-2 text-lg bg-red-500 text-white rounded"
+                      onClick={() => alterarValor(campo, -1)}
+                    >-</button>
+                    <span className="w-10 text-center text-lg">{form[campo]}</span>
+                    <button
+                      type="button"
+                      className="px-3 py-2 text-lg bg-green-600 text-white rounded"
+                      onClick={() => alterarValor(campo, 1)}
+                    >+</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Sinucas */}
+          <div className="border rounded-lg p-4 mb-4 bg-blue-50">
+            <h3 className="text-xl font-semibold mb-4 text-center text-blue-700">Sinucas</h3>
+            <div className="grid grid-cols-2 gap-4 text-center">
+              {[{
+                campo: "sinucas_mandante",
+                label: `${nomeMandante} (Mandante)`,
+              },{
+                campo: "sinucas_visitante",
+                label: `${nomeVisitante} (Visitante)`
+              }].map(({ campo, label }) => (
+                <div key={campo} className="flex flex-col items-center">
+                  <label className="mb-1 font-medium">{label}</label>
+                  <div className="flex items-center gap-3 justify-center">
+                    <button
+                      type="button"
+                      className="px-3 py-2 text-lg bg-red-500 text-white rounded"
+                      onClick={() => alterarValor(campo, -1)}
+                    >-</button>
+                    <span className="w-10 text-center text-lg">{form[campo]}</span>
+                    <button
+                      type="button"
+                      className="px-3 py-2 text-lg bg-green-600 text-white rounded"
+                      onClick={() => alterarValor(campo, 1)}
+                    >+</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Vencedor e botão Salvar lado a lado */}
+          <div className="flex gap-4 items-end">
+            <div className="flex-1">
               <label className="block mb-1 font-medium">Vencedor</label>
-              <select name="vencedor" value={form.vencedor} onChange={handleChange} className="w-full p-2 border rounded" required>
+              <select
+                name="vencedor"
+                value={form.vencedor}
+                onChange={handleChange}
+                className="w-full p-2 border rounded"
+                required
+              >
                 <option value="">Selecione o Vencedor</option>
-                {nomes.map((nome) => (
-                  <option key={nome} value={nome}>{nome}</option>
+                {/* Só pode escolher mandante ou visitante */}
+                {[nomeMandante, nomeVisitante].map((nome) => (
+                  <option key={nome} value={nome}>
+                    {nome}
+                  </option>
                 ))}
               </select>
             </div>
-
             <button
               type="submit"
-              className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 whitespace-nowrap"
+              className="flex-1 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
               disabled={loading}
             >
               {loading ? "Salvando..." : "Salvar Resultado"}
