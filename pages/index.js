@@ -282,8 +282,10 @@ export default function Home() {
                         key={p.id_partida}
                         className="p-2 hover:bg-gray-200 cursor-pointer"
                         onClick={() => {
+                          const texto = `Rodada ${p.rodada} - Partida ${p.id_partida} - ${p.clubes_mandante?.descricao} x ${p.clubes_visitante?.descricao}`;
+                          console.log("Texto selecionado para input:", texto);
                           setForm(f => ({ ...f, id_partida: p.id_partida }));
-                          setSearchTerm(`Rodada ${p.rodada} - Partida ${p.id_partida} - ${p.clubes_mandante?.descricao} x ${p.clubes_visitante?.descricao}`);
+                          setSearchTerm(texto);
                           setIdSelecionado(String(p.id_partida));
                           setDropdownOpen(false);
                         }}
