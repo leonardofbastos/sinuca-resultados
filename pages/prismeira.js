@@ -181,7 +181,7 @@ export default function Prismeira() {
           <Navbar />
     <div style={{ fontFamily: "Open Sans, Helvetica, sans-serif" }}>
       <header className="fixed top-0 left-0 w-full bg-gray-800 text-white py-3 text-center text-xl font-bold z-50">
-        F.O.S.S.A. - Federação Organizada de Sinuca e Sports Alternativos
+        F.O.S.S.A.®
       </header> 
 
       <div className="max-w-6xl mx-auto p-6 pt-32">

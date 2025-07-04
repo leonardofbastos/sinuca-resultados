@@ -135,7 +135,7 @@ export default function Amistoso() {
       <Navbar />
 
       <header className="fixed top-0 left-0 w-full bg-gray-800 text-white py-3 text-center text-xl font-bold z-50">
-        F.O.S.S.A. - Federação Organizada de Sinuca e Sports Alternativos
+        F.O.S.S.A.®
       </header>
 
       <div className="pt-24 px-4 max-w-5xl mx-auto">
