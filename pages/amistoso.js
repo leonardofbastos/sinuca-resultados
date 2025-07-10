@@ -187,7 +187,7 @@ export default function Amistoso() {
               required
               className="w-full p-2 border"
             >
-              <option value="">Selecione Mandante 1</option>
+              <option value="">Selecione...</option>
               {clubes.map((c) => (
                 <option key={c.id_clube} value={c.id_clube}>
                   {c.descricao}
@@ -201,7 +201,7 @@ export default function Amistoso() {
                 onChange={(e) => setForm({ ...form, mandante2: e.target.value })}
                 className="w-full p-2 border mt-2"
               >
-                <option value="">Selecione Mandante 2</option>
+                <option value="">Selecione...</option>
                 {clubes.map((c) => (
                   <option key={c.id_clube} value={c.id_clube}>
                     {c.descricao}
@@ -220,7 +220,7 @@ export default function Amistoso() {
               required
               className="w-full p-2 border"
             >
-              <option value="">Selecione Visitante 1</option>
+              <option value="">Selecione...</option>
               {clubes.map((c) => (
                 <option key={c.id_clube} value={c.id_clube}>
                   {c.descricao}
@@ -234,7 +234,7 @@ export default function Amistoso() {
                 onChange={(e) => setForm({ ...form, visitante2: e.target.value })}
                 className="w-full p-2 border mt-2"
               >
-                <option value="">Selecione Visitante 2</option>
+                <option value="">Selecione...</option>
                 {clubes.map((c) => (
                   <option key={c.id_clube} value={c.id_clube}>
                     {c.descricao}
