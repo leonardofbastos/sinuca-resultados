@@ -174,7 +174,7 @@ export default function Amistoso() {
         </div>
       </div>
 
-      {/* CAMPO DE SELECAO DE ARBITRO */}
+      {/* CAMPO DE SELECAO DE ARBITRO
       <div className="w-1/2">
         <label className="block font-semibold mb-2">Árbitro</label>
         <select
@@ -191,7 +191,7 @@ export default function Amistoso() {
               <option key={clube.id_clube} value={clube.descricao}>{clube.descricao}</option>
             ))}
         </select>
-      </div>
+      </div> */}
 
         <form
           onSubmit={handleSubmit}
