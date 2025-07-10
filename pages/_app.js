@@ -7,7 +7,7 @@ export default function App({ Component, pageProps }) {
     {/* FAVICON DO SITE: */}
       <Head>
         <link rel="icon" type="image/png" href="/icons8-scoreboard-32.png" /> 
-        <title>Meu Site</title>
+        <title>Placar FOSSA</title>
       </Head>
     <Component {...pageProps} />
     </>
