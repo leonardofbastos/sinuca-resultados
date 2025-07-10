@@ -30,6 +30,7 @@ export default function Amistoso() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
 
+  // BUSCA O CADASTRO DE CLUBES
   useEffect(() => {
     fetchClubes();
   }, []);
@@ -132,40 +133,46 @@ export default function Amistoso() {
 
   return (
     <>
-      <Navbar />
+    <Navbar />
 
+    <div style={{ fontFamily: "Open Sans, Helvetica, sans-serif" }}>
       <header className="fixed top-0 left-0 w-full bg-gray-800 text-white py-3 text-center text-xl font-bold z-50">
         F.O.S.S.A.®
       </header>
 
-      <div className="pt-24 px-4 max-w-5xl mx-auto">
-        <h1 className="text-2xl font-bold mb-4 text-center">Registro de Amistoso</h1>
+    {/* TITULO DO TOPO*/}
+      <div className="max-w-6xl mx-auto p-6 pt-32">
+        <div className="flex justify-between items-center mb-4">
+        <h1 className="text-3xl font-bold">
+          Lançar Resultado Amistoso</h1>
+        </div>
 
-        {/* Linha tipo partida + data */}
-        <div className="mb-6 flex flex-col md:flex-row md:items-center md:justify-center gap-4 md:gap-8">
-          <div>
-            <label className="mr-2 font-semibold">Tipo de partida:</label>
+      <div className="flex gap-4">
+        {/* CAMPO DE TIPO AMISTOSO */}
+        <div className="w-1/2">
+            <label className="block font-semibold mb-2">Tipo de Amistoso</label>
             <select
               value={tipo}
               onChange={(e) => setTipo(e.target.value)}
-              className="border px-3 py-2 rounded"
+              className="w-full p-2 border rounded"
             >
               <option value="INDIVIDUAL">Individual</option>
               <option value="DUPLA">Dupla</option>
             </select>
           </div>
 
-          <div>
-            <label className="mr-2 font-semibold">Data do Amistoso:</label>
+          {/* CAMPO DE DATA DO AMISTOSO */}
+          <div className="w-1/2">
+            <label className="block font-semibold mb-2">Data do Amistoso</label>
             <input
               type="date"
               value={form.data_amistoso}
               onChange={(e) => setForm({ ...form, data_amistoso: e.target.value })}
-              className="border px-3 py-2 rounded"
+              className="w-full p-2 border rounded"
               required
             />
-          </div>
         </div>
+      </div>
 
         <form
           onSubmit={handleSubmit}
@@ -237,207 +244,68 @@ export default function Amistoso() {
             )}
           </div>
 
-          {/* Seções de pontuação agrupadas, com o estilo do index */}
+            {/* BLOCOS DE LANÇAR PONTUAÇÕES */}
+          <div className="col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
+            {["Placar", "Felinos", "Penalidades", "Sinucas"].map((titulo, idx) => (
+              <div key={idx} className="border rounded-lg p-4 bg-blue-50 mb-4">
+                <h3 className="text-xl font-bold text-blue-800 text-center mb-4">{titulo}</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  {["mandante", "visitante"].map((tipo, i) => {
+                    const campo = `${titulo.toLowerCase()}_${tipo}`;
+                     return (
+                      <div key={i} className="flex flex-col items-center">
+                        <label className="text-blue-700 font-semibold mb-1">{tipo.charAt(0).toUpperCase() + tipo.slice(1)}</label>
 
-          {/* <div className="col-span-2 grid grid-cols-2 gap-6"> */}
-            {/* Placar */}
-           <div className="bg-blue-100 p-4 rounded shadow mb-4 text-center">
-            <h3 className="font-bold text-blue-900 mb-4 text-lg">Placar</h3>
-            <div className="flex justify-between text-blue-700 font-semibold max-w-md mx-auto">
-              <div className="flex items-center gap-2">
-                <span>Mandante</span>
-                <button
-                  type="button"
-                  onClick={() => alterarValor("placar_mandante", -1)}
-                  className="bg-red-600 text-white px-3 py-1 rounded"
-                >
-                  -
-                </button>
-                <span className="min-w-[30px]">{form.placar_mandante}</span>
-                <button
-                  type="button"
-                  onClick={() => alterarValor("placar_mandante", 1)}
-                  className="bg-green-600 text-white px-3 py-1 rounded"
-                >
-                  +
-                </button>
+                        {/* BOTOES DE MAIS E MENOS */}
+                        <div className="flex items-center gap-2">
+                          {/* <span className="capitalize">{}</span> */}
+                          <button
+                            type="button"
+                            onClick={() => alterarValor(campo,-1)}
+                            className="px-3 py-1 text-white bg-red-500 rounded"
+                          >
+                            -
+                          </button>
+                        <span>{form[campo]}</span>
+                          <button
+                            type="button"
+                            onClick={() => alterarValor(campo, 1)}
+                            className="px-3 py-1 text-white bg-green-600 rounded" 
+                          >
+                            +
+                        </button>
+                      </div>
+                    </div>
+                    );
+                  })}
+                </div>
               </div>
-
-              <div className="flex items-center gap-2">
-                <span>Visitante</span>
-                <button
-                  type="button"
-                  onClick={() => alterarValor("placar_visitante", -1)}
-                  className="bg-red-600 text-white px-3 py-1 rounded"
-                >
-                  -
-                </button>
-                <span className="min-w-[30px]">{form.placar_visitante}</span>
-                <button
-                  type="button"
-                  onClick={() => alterarValor("placar_visitante", 1)}
-                  className="bg-green-600 text-white px-3 py-1 rounded"
-                >
-                  +
-                </button>
-              </div>
-            </div>
+            ))}
           </div>
 
-          {/* Felinos */}
-          <div className="bg-blue-100 p-4 rounded shadow mb-4 text-center">
-            <h3 className="font-bold text-blue-900 mb-4 text-lg">Felinos</h3>
-            <div className="flex justify-between text-blue-700 font-semibold max-w-md mx-auto">
-              <div className="flex items-center gap-2">
-                <span>Mandante</span>
-                <button
-                  type="button"
-                  onClick={() => alterarValor("felinos_mandante", -1)}
-                  className="bg-red-600 text-white px-3 py-1 rounded"
-                >
-                  -
-                </button>
-                <span className="min-w-[30px]">{form.felinos_mandante}</span>
-                <button
-                  type="button"
-                  onClick={() => alterarValor("felinos_mandante", 1)}
-                  className="bg-green-600 text-white px-3 py-1 rounded"
-                >
-                  +
-                </button>
-              </div>
+          {/* Vencedor + Botão Salvar, lado a lado em telas grandes */}
+          <div className="col-span-2 flex flex-col md:flex-row items-end justify-between gap-4 mt-4">
+            {/* <div className="w-full md:w-1/2"> */}
+            <div className="w-1/2">
+              <label className="block font-semibold mb-2">Vencedor</label>
 
-              <div className="flex items-center gap-2">
-                <span>Visitante</span>
-                <button
-                  type="button"
-                  onClick={() => alterarValor("felinos_visitante", -1)}
-                  className="bg-red-600 text-white px-3 py-1 rounded"
+              {tipo === "INDIVIDUAL" ? (
+                <select
+                  value={form.vencedor1}
+                  onChange={(e) => setForm({ ...form, vencedor1: e.target.value })}
+                  required
+                  className="w-full p-2 border rounded"
                 >
-                  -
-                </button>
-                <span className="min-w-[30px]">{form.felinos_visitante}</span>
-                <button
-                  type="button"
-                  onClick={() => alterarValor("felinos_visitante", 1)}
-                  className="bg-green-600 text-white px-3 py-1 rounded"
-                >
-                  +
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Penalidades */}
-          <div className="bg-blue-100 p-4 rounded shadow mb-4 text-center">
-            <h3 className="font-bold text-blue-900 mb-4 text-lg">Penalidades</h3>
-            <div className="flex justify-between text-blue-700 font-semibold max-w-md mx-auto">
-              <div className="flex items-center gap-2">
-                <span>Mandante</span>
-                <button
-                  type="button"
-                  onClick={() => alterarValor("penalidades_mandante", -1)}
-                  className="bg-red-600 text-white px-3 py-1 rounded"
-                >
-                  -
-                </button>
-                <span className="min-w-[30px]">{form.penalidades_mandante}</span>
-                <button
-                  type="button"
-                  onClick={() => alterarValor("penalidades_mandante", 1)}
-                  className="bg-green-600 text-white px-3 py-1 rounded"
-                >
-                  +
-                </button>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <span>Visitante</span>
-                <button
-                  type="button"
-                  onClick={() => alterarValor("penalidades_visitante", -1)}
-                  className="bg-red-600 text-white px-3 py-1 rounded"
-                >
-                  -
-                </button>
-                <span className="min-w-[30px]">{form.penalidades_visitante}</span>
-                <button
-                  type="button"
-                  onClick={() => alterarValor("penalidades_visitante", 1)}
-                  className="bg-green-600 text-white px-3 py-1 rounded"
-                >
-                  +
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Sinucas */}
-          <div className="bg-blue-100 p-4 rounded shadow mb-4 text-center">
-            <h3 className="font-bold text-blue-900 mb-4 text-lg">Sinucas</h3>
-            <div className="flex justify-between text-blue-700 font-semibold max-w-md mx-auto">
-              <div className="flex items-center gap-2">
-                <span>Mandante</span>
-                <button
-                  type="button"
-                  onClick={() => alterarValor("sinucas_mandante", -1)}
-                  className="bg-red-600 text-white px-3 py-1 rounded"
-                >
-                  -
-                </button>
-                <span className="min-w-[30px]">{form.sinucas_mandante}</span>
-                <button
-                  type="button"
-                  onClick={() => alterarValor("sinucas_mandante", 1)}
-                  className="bg-green-600 text-white px-3 py-1 rounded"
-                >
-                  +
-                </button>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <span>Visitante</span>
-                <button
-                  type="button"
-                  onClick={() => alterarValor("sinucas_visitante", -1)}
-                  className="bg-red-600 text-white px-3 py-1 rounded"
-                >
-                  -
-                </button>
-                <span className="min-w-[30px]">{form.sinucas_visitante}</span>
-                <button
-                  type="button"
-                  onClick={() => alterarValor("sinucas_visitante", 1)}
-                  className="bg-green-600 text-white px-3 py-1 rounded"
-                >
-                  +
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Vencedores */}
-          <div className="col-span-2">
-            <label className="block mb-2 font-semibold">Vencedor</label>
-
-            {tipo === "INDIVIDUAL" ? (
-              <select
-                value={form.vencedor1}
-                onChange={(e) => setForm({ ...form, vencedor1: e.target.value })}
-                required
-                className="w-full p-2 border rounded"
-              >
-                <option value="">Selecione o vencedor</option>
-                {[form.mandante1, form.visitante1].map((id) =>
-                  id ? (
-                    <option key={id} value={id}>
-                      {getNomeClube(id)}
-                    </option>
-                  ) : null
-                )}
-              </select>
-            ) : (
-              <>
+                  <option value="">Selecione o vencedor</option>
+                  {[form.mandante1, form.visitante1].map((id) =>
+                    id ? (
+                      <option key={id} value={id}>
+                        {getNomeClube(id)}
+                      </option>
+                    ) : null
+                  )}
+                </select>
+              ) : (
                 <select
                   onChange={(e) => {
                     const val = e.target.value;
@@ -457,7 +325,7 @@ export default function Amistoso() {
                       setForm({ ...form, vencedor1: "", vencedor2: "" });
                     }
                   }}
-                  className="w-full p-2 border rounded mb-2"
+                  className="w-full p-2 border rounded"
                   value={
                     form.vencedor1 === form.mandante1 && form.vencedor2 === form.mandante2
                       ? "MANDANTE"
@@ -478,70 +346,31 @@ export default function Amistoso() {
                     </option>
                   )}
                 </select>
+              )}
+            </div>
 
-                {/* Mostra os vencedores individuais para ajustes, se precisar */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block font-semibold mb-1">Vencedor 1</label>
-                    <select
-                      value={form.vencedor1}
-                      onChange={(e) => setForm({ ...form, vencedor1: e.target.value })}
-                      required
-                      className="w-full p-2 border rounded"
-                    >
-                      {[form.mandante1, form.mandante2, form.visitante1, form.visitante2]
-                        .filter(Boolean)
-                        .map((id) => (
-                          <option key={id} value={id}>
-                            {getNomeClube(id)}
-                          </option>
-                        ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block font-semibold mb-1">Vencedor 2</label>
-                    <select
-                      value={form.vencedor2}
-                      onChange={(e) => setForm({ ...form, vencedor2: e.target.value })}
-                      required
-                      className="w-full p-2 border rounded"
-                    >
-                      {[form.mandante1, form.mandante2, form.visitante1, form.visitante2]
-                        .filter(Boolean)
-                        .map((id) => (
-                          <option key={id} value={id}>
-                            {getNomeClube(id)}
-                          </option>
-                        ))}
-                    </select>
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
-
-          {/* Botão salvar e mensagens */}
-          <div className="col-span-2">
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-blue-600 text-white p-2 rounded mt-4"
+              className="w-full md:w-1/2 bg-blue-600 text-white p-2 rounded"
             >
               {loading ? "Salvando..." : "Salvar Amistoso"}
             </button>
-
-            {message && (
-              <p
-                className={`mt-2 text-center text-sm ${
-                  message.includes("sucesso") ? "text-green-600" : "text-red-600"
-                }`}
-              >
-                {message}
-              </p>
-            )}
           </div>
+
+          {/* Mensagem de sucesso ou erro */}
+          {message && (
+            <p
+              className={`col-span-2 mt-2 text-center text-sm ${
+                message.includes("sucesso") ? "text-green-600" : "text-red-600"
+              }`}
+            >
+              {message}
+            </p>
+          )}
         </form>
       </div>
+    </div>
     </>
   );
 }
