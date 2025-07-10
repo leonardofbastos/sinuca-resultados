@@ -174,6 +174,25 @@ export default function Amistoso() {
         </div>
       </div>
 
+      {/* CAMPO DE SELECAO DE ARBITRO */}
+      <div className="w-1/2">
+        <label className="block font-semibold mb-2">Árbitro</label>
+        <select
+          name="arbitro"
+          value={form.arbitro}
+          onChange={e => setForm(f => ({ ...f, arbitro: e.target.value }))}
+          className="w-full p-2 border rounded"
+          required
+        >
+          <option value="">Selecione um Árbitro</option>
+          {clubes
+            .filter(clube => !arbitrosValidos.includes(clube.descricao))
+            .map(clube => (
+              <option key={clube.id_clube} value={clube.descricao}>{clube.descricao}</option>
+            ))}
+        </select>
+      </div>
+
         <form
           onSubmit={handleSubmit}
           className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-white p-6 rounded shadow"
