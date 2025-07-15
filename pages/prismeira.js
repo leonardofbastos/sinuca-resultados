@@ -87,6 +87,7 @@
             data_criacao
           )
         `)
+        .order("status_partida", {ascending: true})
         .order("rodada", { ascending: true })
         .order("id_partida", { ascending: true });
 
